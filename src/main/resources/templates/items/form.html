@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title th:text="${pageTitle}">Lebensmittel</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar compact">
+	<div>
+		<h1 th:text="${pageTitle}">Lebensmittel</h1>
+		<p>Produkte mit Ablaufdatum, Marke und Bild verwalten</p>
+	</div>
+	<nav>
+		<a th:href="@{/}" class="button">Dashboard</a>
+		<a th:href="@{/items}" class="button">Bestand</a>
+		<a th:href="@{/scan}" class="button primary">Scannen</a>
+	</nav>
+</header>
+
+<main class="container">
+	<section class="panel form-panel">
+		<form th:action="${formAction}" th:object="${foodItemForm}" method="post" enctype="multipart/form-data" class="form-grid">
+			<div>
+				<label for="name">Name</label>
+				<input id="name" type="text" th:field="*{name}" placeholder="z. B. Milch">
+				<p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+			</div>
+
+			<div>
+				<label for="brand">Marke</label>
+				<input id="brand" type="text" th:field="*{brand}" placeholder="z. B. Emmi">
+				<p class="field-error" th:if="${#fields.hasErrors('brand')}" th:errors="*{brand}"></p>
+			</div>
+
+			<div>
+				<label for="barcode">Barcode</label>
+				<input id="barcode" type="text" th:field="*{barcode}" placeholder="EAN / UPC / weiterer Code">
+				<p class="field-error" th:if="${#fields.hasErrors('barcode')}" th:errors="*{barcode}"></p>
+			</div>
+
+			<div>
+				<label for="expiryDate">Ablaufdatum</label>
+				<input id="expiryDate" type="date" th:field="*{expiryDate}">
+				<p class="field-error" th:if="${#fields.hasErrors('expiryDate')}" th:errors="*{expiryDate}"></p>
+			</div>
+
+			<div>
+				<label for="quantity">Menge</label>
+				<input id="quantity" type="number" min="1" th:field="*{quantity}">
+				<p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+			</div>
+
+			<div>
+				<label for="storageLocation">Lagerort</label>
+				<input id="storageLocation" type="text" list="storage-locations" th:field="*{storageLocation}" placeholder="z. B. Eiskasten, Tiefkühler oder Gewürzlade">
+				<datalist id="storage-locations">
+					<option th:each="location : ${storageLocations}" th:value="${location}"></option>
+				</datalist>
+				<p class="field-error" th:if="${#fields.hasErrors('storageLocation')}" th:errors="*{storageLocation}"></p>
+			</div>
+
+			<div>
+				<label for="category">Art</label>
+				<select id="category" th:field="*{category}">
+					<option th:each="category : ${categories}" th:value="${category}" th:text="${category.label}"></option>
+				</select>
+				<p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+			</div>
+
+			<div class="full-width">
+				<label for="notes">Notizen</label>
+				<textarea id="notes" rows="4" th:field="*{notes}" placeholder="z. B. bereits geöffnet oder Sonderangebot"></textarea>
+				<p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+			</div>
+
+			<div class="full-width">
+				<label for="image">Eigenes Bild hochladen (optional)</label>
+				<input id="image" type="file" name="image" accept="image/*">
+			</div>
+
+			<div class="full-width">
+				<label for="externalImageUrl">Externe Bild-URL (optional, z. B. vom Barcode-Lookup)</label>
+				<input id="externalImageUrl" type="url" th:field="*{externalImageUrl}" placeholder="https://...">
+				<p class="field-error" th:if="${#fields.hasErrors('externalImageUrl')}" th:errors="*{externalImageUrl}"></p>
+			</div>
+
+			<div class="full-width" th:if="${item != null && item.displayImageUrl != null && !item.displayImageUrl.isBlank()}">
+				<label>Aktuelles Bild</label>
+				<img th:src="${item.displayImageUrl}" alt="Aktuelles Produktbild" class="preview-image">
+			</div>
+
+			<div class="full-width button-row">
+				<button type="submit" class="button primary">Speichern</button>
+				<a th:href="@{/items}" class="button">Abbrechen</a>
+			</div>
+		</form>
+	</section>
+</main>
+</body>
+</html>
+

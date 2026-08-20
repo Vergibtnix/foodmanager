@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title th:text="${item.name}">Produkt</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar compact">
+	<div>
+		<h1 th:text="${item.name}">Produkt</h1>
+		<p>Detailansicht eines erfassten Lebensmittels</p>
+	</div>
+	<nav>
+		<a th:href="@{/}" class="button">Dashboard</a>
+		<a th:href="@{/items}" class="button">Zurück</a>
+		<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button primary">Bearbeiten</a>
+	</nav>
+</header>
+
+<main class="container detail-layout">
+	<section class="panel image-panel">
+		<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}" th:src="${item.displayImageUrl}" alt="Produktbild" class="detail-image">
+		<div th:if="${item.displayImageUrl == null || item.displayImageUrl.isBlank()}" class="image-placeholder large">Kein Bild verfügbar</div>
+	</section>
+
+	<section class="panel">
+		<div class="detail-grid">
+			<div><strong>Name</strong><span th:text="${item.name}"></span></div>
+			<div><strong>Marke</strong><span th:text="${item.brand ?: '-'}"></span></div>
+			<div><strong>Art</strong><span th:text="${item.category.label}"></span></div>
+			<div><strong>Barcode</strong><span th:text="${item.barcode ?: '-'}"></span></div>
+			<div><strong>Ablaufdatum</strong><span th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}"></span></div>
+			<div><strong>Menge</strong><span th:text="${item.quantity}"></span></div>
+			<div><strong>Lagerort</strong><span th:text="${item.storageLocation}"></span></div>
+			<div class="full-width"><strong>Status</strong><span th:if="${item.expired}">Abgelaufen</span><span th:if="${!item.expired && item.expiringSoon}">Läuft bald ab</span><span th:if="${!item.expired && !item.expiringSoon}">Alles okay</span></div>
+			<div class="full-width"><strong>Notizen</strong><span th:text="${item.notes ?: '-'}"></span></div>
+		</div>
+	</section>
+</main>
+</body>
+</html>
+

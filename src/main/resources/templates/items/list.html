@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Bestand</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar compact">
+	<div>
+		<h1>Lebensmittel-Bestand</h1>
+		<p>Alle erfassten Produkte auf einen Blick</p>
+	</div>
+	<nav>
+		<a th:href="@{/}" class="button">Dashboard</a>
+		<a th:href="@{/scan}" class="button primary">Scannen</a>
+		<a th:href="@{/items/new}" class="button">Neu</a>
+	</nav>
+</header>
+
+<main class="container">
+		<div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+
+		<section class="panel">
+			<form method="get" th:action="@{/items}" class="toolbar">
+				<input type="text" name="q" th:value="${query}" placeholder="Suche nach Name, Marke, Barcode oder Ort">
+				<button type="submit" class="button">Suchen</button>
+			</form>
+		</section>
+
+		<section class="table-panel">
+			<div th:if="${#maps.isEmpty(groupedItems)}" class="empty-state">
+				<p>Keine Lebensmittel gefunden.</p>
+			</div>
+
+			<div th:if="${!#maps.isEmpty(groupedItems)}" class="location-groups">
+				<section class="location-group" th:each="locationEntry : ${groupedItems.entrySet()}">
+					<header class="location-header">
+						<h2 th:text="${locationEntry.key}">Kühlschrank</h2>
+					</header>
+
+					<div class="category-groups">
+						<section class="category-group" th:each="categoryEntry : ${locationEntry.value.entrySet()}">
+							<h3 th:text="${categoryEntry.key.label}">Getraenk</h3>
+							<div class="table-wrapper">
+								<table>
+									<thead>
+									<tr>
+										<th>Bild</th>
+										<th>Name</th>
+										<th>Marke</th>
+										<th>Barcode</th>
+										<th>Ablaufdatum</th>
+										<th>Menge</th>
+										<th>Aktionen</th>
+									</tr>
+									</thead>
+									<tbody>
+									<tr th:each="item : ${categoryEntry.value}">
+										<td>
+											<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}" th:src="${item.displayImageUrl}" alt="Bild" class="table-image">
+											<div th:if="${item.displayImageUrl == null || item.displayImageUrl.isBlank()}" class="table-image placeholder">-</div>
+										</td>
+										<td>
+											<div class="table-name">
+												<a th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Produkt</a>
+												<span class="badge danger" th:if="${item.expired}">Abgelaufen</span>
+												<span class="badge warning" th:if="${!item.expired && item.expiringSoon}">Bald fällig</span>
+											</div>
+										</td>
+										<td th:text="${item.brand ?: '-'}">-</td>
+										<td th:text="${item.barcode ?: '-'}">-</td>
+										<td th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}">01.01.2026</td>
+										<td th:text="${item.quantity}">1</td>
+										<td>
+											<div class="button-row wrap">
+												<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button small">Bearbeiten</a>
+												<form method="post" th:action="@{/items/{id}/delete(id=${item.id})}" onsubmit="return confirm('Dieses Lebensmittel wirklich löschen?');">
+													<button type="submit" class="button danger small">Löschen</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+					</div>
+				</section>
+			</div>
+		</section>
+</main>
+</body>
+</html>
+

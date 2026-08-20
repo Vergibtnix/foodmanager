@@ -1,0 +1,23 @@
+services:
+  foodmanager-db:
+    image: postgres:16-alpine
+    container_name: foodmanager-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${FOODMANAGER_DB_NAME:-foodmanager}
+      POSTGRES_USER: ${FOODMANAGER_DB_USER:-foodmanager}
+      POSTGRES_PASSWORD: ${FOODMANAGER_DB_PASSWORD:-foodmanager}
+    ports:
+      - "${FOODMANAGER_DB_PORT:-5432}:5432"
+    volumes:
+      - foodmanager-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  foodmanager-postgres-data:
+

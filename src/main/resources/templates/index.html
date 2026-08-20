@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Foodmanager</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+	<div>
+		<h1>Foodmanager</h1>
+		<p>Deine Vorratskammer auf einem Blick</p>
+	</div>
+	<nav>
+		<a th:href="@{/scan}" class="button primary">Scannen</a>
+		<a th:href="@{/items}" class="button">Bestand</a>
+		<a th:href="@{/items/new}" class="button">Neu</a>
+	</nav>
+</header>
+
+<main class="container">
+	<section class="hero-card">
+		<div>
+			<h2>Lebensmittel schnell per Handy erfassen</h2>
+			<p>Öffne diese App auf dem Smartphone im selben Heimnetz wie dein Raspberry Pi und scanne Barcodes direkt über die Kamera.</p>
+		</div>
+		<div class="hero-actions">
+			<a th:href="@{/scan}" class="button primary large">Scanner öffnen</a>
+			<a th:href="@{/items/new}" class="button large">Manuell erfassen</a>
+		</div>
+	</section>
+
+	<section class="stats-grid">
+		<article class="stat-card">
+			<span class="stat-label">Gesamt im Bestand</span>
+			<strong th:text="${summary.totalItems}">0</strong>
+		</article>
+		<article class="stat-card warning">
+			<span class="stat-label">Läuft bald ab</span>
+			<strong th:text="${summary.expiringSoonItems}">0</strong>
+		</article>
+		<article class="stat-card danger">
+			<span class="stat-label">Bereits abgelaufen</span>
+			<strong th:text="${summary.expiredItems}">0</strong>
+		</article>
+	</section>
+
+	<section class="panel">
+		<div class="panel-header">
+			<h2>Nächste Ablaufdaten</h2>
+			<a th:href="@{/items}">Alles anzeigen</a>
+		</div>
+		<div th:if="${#lists.isEmpty(summary.nextExpiringItems)}" class="empty-state">
+			<p>Noch keine Lebensmittel erfasst. Lege dein erstes Produkt an oder scanne direkt los.</p>
+		</div>
+		<div class="item-grid" th:if="${!#lists.isEmpty(summary.nextExpiringItems)}">
+			<article class="item-card" th:each="item : ${summary.nextExpiringItems}">
+				<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}" th:src="${item.displayImageUrl}" alt="Produktbild">
+				<div class="image-placeholder" th:if="${item.displayImageUrl == null || item.displayImageUrl.isBlank()}">Kein Bild</div>
+				<div class="item-content">
+					<div class="item-header-row">
+						<h3 th:text="${item.name}">Milch</h3>
+						<span class="badge danger" th:if="${item.expired}">Abgelaufen</span>
+						<span class="badge warning" th:if="${!item.expired && item.expiringSoon}">Bald fällig</span>
+					</div>
+					<p th:text="${item.brand}">Marke</p>
+					<ul class="meta-list">
+						<li><strong>Ablaufdatum:</strong> <span th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}"></span></li>
+						<li><strong>Menge:</strong> <span th:text="${item.quantity}"></span></li>
+						<li><strong>Ort:</strong> <span th:text="${item.storageLocation}"></span></li>
+					</ul>
+					<a th:href="@{/items/{id}(id=${item.id})}" class="text-link">Details</a>
+				</div>
+			</article>
+		</div>
+	</section>
+</main>
+</body>
+</html>
+

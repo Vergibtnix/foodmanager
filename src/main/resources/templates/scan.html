@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Barcode scannen</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar compact">
+	<div>
+		<h1>Barcode scannen</h1>
+		<p>Scanne mit deinem Handy und übertrage das Produkt direkt in den Vorrat.</p>
+	</div>
+	<nav>
+		<a th:href="@{/}" class="button">Dashboard</a>
+		<a th:href="@{/items}" class="button">Bestand</a>
+	</nav>
+</header>
+
+<main class="container two-column">
+	<section class="panel scanner-panel">
+		<h2>Kamera-Scanner</h2>
+		<p class="hint">Am besten funktioniert der Scan auf Android/Chrome. Für erste Tests kannst du aber auch die Kamera deines Laptops verwenden. Falls dein Browser den Scanner nicht unterstützt, kannst du den Barcode unten manuell eingeben.</p>
+		<div class="video-wrapper">
+			<video id="scanner-video" playsinline muted></video>
+		</div>
+		<div class="button-row">
+			<button type="button" class="button primary" id="start-scan">Scanner starten</button>
+			<button type="button" class="button" id="stop-scan">Scanner stoppen</button>
+			<button type="button" class="button" id="analyze-frame">Aktuelles Bild prüfen</button>
+		</div>
+		<p id="scan-status" class="status-text">Bereit zum Starten.</p>
+		<p class="hint">Tipp: Gerade kleine EAN-Barcodes auf Wasserdrop-, Gewürz- oder Snack-Verpackungen werden von Laptop-Webcams oft erst erkannt, wenn du die Packung ruhig hältst, näher an die Kamera bringst und Spiegelungen vermeidest.</p>
+	</section>
+
+	<section class="panel">
+		<h2>Produkt übernehmen</h2>
+		<form id="lookup-form" class="stack">
+			<label for="barcode-input">Barcode</label>
+			<div class="inline-form">
+				<input id="barcode-input" name="barcode" type="text" placeholder="z. B. 7613035974685" autocomplete="off">
+				<button type="submit" class="button primary">Suchen</button>
+			</div>
+		</form>
+
+		<div id="lookup-result" class="lookup-result hidden">
+			<div class="lookup-image-box">
+				<img id="lookup-image" src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" alt="Produktbild" class="hidden">
+				<div id="lookup-image-placeholder" class="image-placeholder">Kein Bild</div>
+			</div>
+			<div class="stack small-gap">
+				<h3 id="lookup-name">Noch kein Produkt geladen</h3>
+				<p><strong>Marke:</strong> <span id="lookup-brand">-</span></p>
+				<p><strong>Barcode:</strong> <span id="lookup-barcode">-</span></p>
+				<p id="lookup-message" class="hint"></p>
+				<a id="create-link" href="#" class="button primary">Produkt übernehmen</a>
+			</div>
+		</div>
+	</section>
+</main>
+
+<script th:src="@{/js/scan.js(v=3)}"></script>
+</body>
+</html>
+
