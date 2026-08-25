@@ -2,6 +2,8 @@ package com.example.foodmanager.service;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,17 @@ import org.springframework.http.HttpStatus;
 @Service
 @Transactional
 public class FoodItemService {
+
+	public static final List<String> STORAGE_LOCATIONS = List.of(
+		"Eiskasten",
+		"Naschlade",
+		"Tiefkühler klein",
+		"TieferKühler Groß",
+		"Gewuerzlade",
+		"Nudellade",
+		"Back Kasten",
+		"Brot korb"
+	);
 
 	private final FoodItemRepository foodItemRepository;
 	private final ImageStorageService imageStorageService;
@@ -59,6 +72,21 @@ public class FoodItemService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<FoodItem> filterItems(List<FoodItem> items, String location, ProductCategory category) {
+		List<FoodItem> filtered = new ArrayList<>();
+		for (FoodItem item : items) {
+			if (StringUtils.hasText(location) && !location.equals(item.getStorageLocation())) {
+				continue;
+			}
+			if (category != null && item.getCategory() != category) {
+				continue;
+			}
+			filtered.add(item);
+		}
+		return filtered;
+	}
+
+	@Transactional(readOnly = true)
 	public Map<String, Map<ProductCategory, List<FoodItem>>> groupByLocationAndCategory(List<FoodItem> items) {
 		Map<String, Map<ProductCategory, List<FoodItem>>> grouped = new LinkedHashMap<>();
 		for (FoodItem item : items) {
@@ -69,7 +97,33 @@ public class FoodItemService {
 				.computeIfAbsent(category, key -> new java.util.ArrayList<>())
 				.add(item);
 		}
-		return grouped;
+
+		Map<String, Map<ProductCategory, List<FoodItem>>> ordered = new LinkedHashMap<>();
+		for (String location : STORAGE_LOCATIONS) {
+			Map<ProductCategory, List<FoodItem>> categories = grouped.remove(location);
+			if (categories != null) {
+				ordered.put(location, orderCategories(categories));
+			}
+		}
+		grouped.entrySet().stream()
+			.sorted(Map.Entry.comparingByKey(Comparator.nullsLast(String::compareToIgnoreCase)))
+			.forEach(entry -> ordered.put(entry.getKey(), orderCategories(entry.getValue())));
+
+		return ordered;
+	}
+
+	private Map<ProductCategory, List<FoodItem>> orderCategories(Map<ProductCategory, List<FoodItem>> categories) {
+		Map<ProductCategory, List<FoodItem>> ordered = new LinkedHashMap<>();
+		for (ProductCategory category : ProductCategory.values()) {
+			List<FoodItem> items = categories.get(category);
+			if (items != null && !items.isEmpty()) {
+				ordered.put(category, items);
+			}
+		}
+		categories.entrySet().stream()
+			.filter(entry -> !ordered.containsKey(entry.getKey()))
+			.forEach(entry -> ordered.put(entry.getKey(), entry.getValue()));
+		return ordered;
 	}
 
 	@Transactional(readOnly = true)
@@ -102,7 +156,7 @@ public class FoodItemService {
 		item.setBarcode(trimToNull(form.getBarcode()));
 		item.setExpiryDate(form.getExpiryDate());
 		item.setQuantity(form.getQuantity());
-		item.setStorageLocation(form.getStorageLocation().trim());
+		item.setStorageLocation(normalizeStorageLocation(form.getStorageLocation(), item.getStorageLocation()));
 		item.setCategory(form.getCategory() == null ? ProductCategory.SONSTIGES : form.getCategory());
 		item.setNotes(trimToNull(form.getNotes()));
 		item.setExternalImageUrl(trimToNull(form.getExternalImageUrl()));
@@ -120,6 +174,21 @@ public class FoodItemService {
 			return null;
 		}
 		return value.trim();
+	}
+
+	private String normalizeStorageLocation(String value, String existingLocation) {
+		if (!StringUtils.hasText(value)) {
+			return existingLocation == null || existingLocation.isBlank() ? STORAGE_LOCATIONS.get(0) : existingLocation.trim();
+		}
+
+		String trimmed = value.trim();
+		if (STORAGE_LOCATIONS.contains(trimmed)) {
+			return trimmed;
+		}
+		if (existingLocation != null && existingLocation.trim().equals(trimmed)) {
+			return trimmed;
+		}
+		return STORAGE_LOCATIONS.get(0);
 	}
 }
 

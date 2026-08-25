@@ -1,0 +1,47 @@
+{
+  "realm": "foodmanager",
+  "enabled": true,
+  "displayName": "Foodmanager",
+  "clients": [
+    {
+      "clientId": "foodmanager-web",
+      "name": "Foodmanager Web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "foodmanager-web-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8085/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:8085"
+      ],
+      "baseUrl": "http://localhost:8085",
+      "rootUrl": "http://localhost:8085",
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8085/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "email": "demo@example.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo1234",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
+

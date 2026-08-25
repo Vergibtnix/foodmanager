@@ -16,6 +16,10 @@
 		<a th:href="@{/}" class="button">Dashboard</a>
 		<a th:href="@{/scan}" class="button primary">Scannen</a>
 		<a th:href="@{/items/new}" class="button">Neu</a>
+		<form th:action="@{/logout}" method="post" class="nav-form">
+			<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+			<button type="submit" class="button danger">Abmelden</button>
+		</form>
 	</nav>
 </header>
 
@@ -25,8 +29,34 @@
 		<section class="panel">
 			<form method="get" th:action="@{/items}" class="toolbar">
 				<input type="text" name="q" th:value="${query}" placeholder="Suche nach Name, Marke, Barcode oder Ort">
+				<input type="hidden" name="location" th:value="${selectedLocation}">
+				<input type="hidden" name="category" th:if="${selectedCategory != null}" th:value="${selectedCategory}">
 				<button type="submit" class="button">Suchen</button>
 			</form>
+			<div class="filter-panel">
+				<div class="filter-group">
+					<span class="filter-label">Lagerort</span>
+					<div class="filter-chips">
+						<a th:href="@{/items(q=${query}, category=${selectedCategory})}" class="filter-chip" th:classappend="${selectedLocation == ''} ? 'active' : null">Alle</a>
+						<a th:each="location : ${storageLocations}"
+						   th:href="@{/items(q=${query}, location=${location}, category=${selectedCategory})}"
+						   class="filter-chip"
+						   th:classappend="${selectedLocation == location} ? ' active' : ''"
+						   th:text="${location}">Ort</a>
+					</div>
+				</div>
+				<div class="filter-group">
+					<span class="filter-label">Art</span>
+					<div class="filter-chips">
+						<a th:href="@{/items(q=${query}, location=${selectedLocation})}" class="filter-chip" th:classappend="${selectedCategory == null} ? 'active' : null">Alle</a>
+						<a th:each="category : ${categories}"
+						   th:href="@{/items(q=${query}, location=${selectedLocation}, category=${category})}"
+						   class="filter-chip"
+						   th:classappend="${selectedCategory == category} ? ' active' : ''"
+						   th:text="${category.label}">Kategorie</a>
+					</div>
+				</div>
+			</div>
 		</section>
 
 		<section class="table-panel">
@@ -65,6 +95,7 @@
 										<td>
 											<div class="table-name">
 												<a th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Produkt</a>
+																								<span class="badge category-badge" th:classappend="${item.category.cssClass}" th:text="${item.category.label}">Art</span>
 												<span class="badge danger" th:if="${item.expired}">Abgelaufen</span>
 												<span class="badge warning" th:if="${!item.expired && item.expiringSoon}">Bald fällig</span>
 											</div>

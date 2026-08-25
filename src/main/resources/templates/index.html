@@ -10,28 +10,43 @@
 <header class="topbar">
 	<div>
 		<h1>Foodmanager</h1>
-		<p>Deine Vorratskammer auf einem Blick</p>
+		<p>Deine Vorratskammer auf einen Blick</p>
 	</div>
 	<nav>
-		<a th:href="@{/scan}" class="button primary">Scannen</a>
-		<a th:href="@{/items}" class="button">Bestand</a>
-		<a th:href="@{/items/new}" class="button">Neu</a>
+		<a th:if="${authenticated}" th:href="@{/scan}" class="button primary">Scannen</a>
+		<a th:if="${authenticated}" th:href="@{/items}" class="button">Bestand</a>
+		<a th:if="${authenticated}" th:href="@{/items/new}" class="button">Neu</a>
+		<a th:if="${!authenticated}" th:href="${loginUrl}" class="button primary">Mit Keycloak anmelden</a>
+		<form th:if="${authenticated}" th:action="@{/logout}" method="post" class="nav-form">
+			<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+			<button type="submit" class="button danger">Abmelden</button>
+		</form>
 	</nav>
 </header>
 
 <main class="container">
-	<section class="hero-card">
+	<section class="hero-card" th:if="${authenticated}">
 		<div>
-			<h2>Lebensmittel schnell per Handy erfassen</h2>
+			<h2>Willkommen zurück, <span th:text="${username}">Benutzer</span></h2>
 			<p>Öffne diese App auf dem Smartphone im selben Heimnetz wie dein Raspberry Pi und scanne Barcodes direkt über die Kamera.</p>
 		</div>
 		<div class="hero-actions">
 			<a th:href="@{/scan}" class="button primary large">Scanner öffnen</a>
 			<a th:href="@{/items/new}" class="button large">Manuell erfassen</a>
 		</div>
+</section>
+
+	<section class="hero-card auth-hero" th:if="${!authenticated}">
+		<div>
+			<h2>Mit Keycloak anmelden</h2>
+			<p>Bitte melde dich an, damit du deinen Foodmanager sicher im Heimnetz verwenden kannst.</p>
+		</div>
+		<div class="hero-actions">
+			<a th:href="${loginUrl}" class="button primary large">Zum Login</a>
+		</div>
 	</section>
 
-	<section class="stats-grid">
+	<section class="stats-grid" th:if="${authenticated}">
 		<article class="stat-card">
 			<span class="stat-label">Gesamt im Bestand</span>
 			<strong th:text="${summary.totalItems}">0</strong>
@@ -46,7 +61,7 @@
 		</article>
 	</section>
 
-	<section class="panel">
+	<section class="panel" th:if="${authenticated}">
 		<div class="panel-header">
 			<h2>Nächste Ablaufdaten</h2>
 			<a th:href="@{/items}">Alles anzeigen</a>
@@ -72,6 +87,26 @@
 					</ul>
 					<a th:href="@{/items/{id}(id=${item.id})}" class="text-link">Details</a>
 				</div>
+			</article>
+		</div>
+	</section>
+
+	<section class="panel" th:if="${!authenticated}">
+		<div class="panel-header">
+			<h2>So funktioniert es</h2>
+		</div>
+		<div class="feature-grid">
+			<article class="feature-card">
+				<h3>1. Mit Keycloak anmelden</h3>
+				<p>Nutze deinen zentralen Login, damit die App geschützt bleibt.</p>
+			</article>
+			<article class="feature-card">
+				<h3>2. Produkte scannen</h3>
+				<p>Öffne den Scanner und erfasse Lebensmittel mit dem Handy oder Laptop.</p>
+			</article>
+			<article class="feature-card">
+				<h3>3. Bestand verwalten</h3>
+				<p>Sortiere nach Lagerort und Art, damit du jederzeit den Überblick hast.</p>
 			</article>
 		</div>
 	</section>

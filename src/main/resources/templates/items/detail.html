@@ -16,6 +16,10 @@
 		<a th:href="@{/}" class="button">Dashboard</a>
 		<a th:href="@{/items}" class="button">Zurück</a>
 		<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button primary">Bearbeiten</a>
+		<form th:action="@{/logout}" method="post" class="nav-form">
+			<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+			<button type="submit" class="button danger">Abmelden</button>
+		</form>
 	</nav>
 </header>
 
@@ -29,7 +33,7 @@
 		<div class="detail-grid">
 			<div><strong>Name</strong><span th:text="${item.name}"></span></div>
 			<div><strong>Marke</strong><span th:text="${item.brand ?: '-'}"></span></div>
-			<div><strong>Art</strong><span th:text="${item.category.label}"></span></div>
+			<div><strong>Art</strong><span class="badge category-badge" th:classappend="${item.category.cssClass}" th:text="${item.category.label}"></span></div>
 			<div><strong>Barcode</strong><span th:text="${item.barcode ?: '-'}"></span></div>
 			<div><strong>Ablaufdatum</strong><span th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}"></span></div>
 			<div><strong>Menge</strong><span th:text="${item.quantity}"></span></div>

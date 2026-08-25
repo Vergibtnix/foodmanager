@@ -1,5 +1,7 @@
 package com.example.foodmanager.web;
 
+import java.security.Principal;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +18,14 @@ public class HomeController {
 	}
 
 	@GetMapping("/")
-	public String home(Model model) {
-		model.addAttribute("summary", foodItemService.getDashboardSummary());
+	public String home(Model model, Principal principal) {
+		boolean authenticated = principal != null;
+		model.addAttribute("authenticated", authenticated);
+		model.addAttribute("loginUrl", "/oauth2/authorization/keycloak");
+		if (authenticated) {
+			model.addAttribute("username", principal.getName());
+			model.addAttribute("summary", foodItemService.getDashboardSummary());
+		}
 		return "index";
 	}
 

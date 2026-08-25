@@ -34,7 +34,7 @@ public class FoodItemForm {
 
 	@NotBlank(message = "Bitte gib einen Lagerort an.")
 	@Size(max = 120, message = "Der Lagerort darf maximal 120 Zeichen lang sein.")
-	private String storageLocation = "Kühlschrank";
+	private String storageLocation = "Eiskasten";
 
 	@NotNull(message = "Bitte waehle eine Produktart.")
 	private ProductCategory category = ProductCategory.SONSTIGES;

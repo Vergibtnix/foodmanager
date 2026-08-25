@@ -40,7 +40,7 @@ public class FoodItem {
 	private Integer quantity = 1;
 
 	@Column(nullable = false, length = 120)
-	private String storageLocation = "Kühlschrank";
+	private String storageLocation = "Eiskasten";
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 40)

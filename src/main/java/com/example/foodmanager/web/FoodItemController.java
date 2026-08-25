@@ -33,11 +33,19 @@ public class FoodItemController {
 	}
 
 	@GetMapping
-	public String list(@RequestParam(name = "q", required = false) String query, Model model) {
+	public String list(
+		@RequestParam(name = "q", required = false) String query,
+		@RequestParam(name = "location", required = false) String location,
+		@RequestParam(name = "category", required = false) ProductCategory category,
+		Model model
+	) {
 		List<FoodItem> items = foodItemService.findAll(query);
+		items = foodItemService.filterItems(items, location, category);
 		model.addAttribute("items", items);
 		model.addAttribute("groupedItems", foodItemService.groupByLocationAndCategory(items));
 		model.addAttribute("query", query == null ? "" : query);
+		model.addAttribute("selectedLocation", location == null ? "" : location);
+		model.addAttribute("selectedCategory", category);
 		return "items/list";
 	}
 
@@ -127,18 +135,7 @@ public class FoodItemController {
 
 	@ModelAttribute("storageLocations")
 	public List<String> storageLocations() {
-		return List.of(
-			"Kühlschrank",
-			"Eiskasten",
-			"Gefrierschrank",
-			"Tiefkühler",
-			"Speisekammer",
-			"Naschlade",
-			"Gewürzlade",
-			"Obstkorb",
-			"Keller",
-			"Sonstiges"
-		);
+		return FoodItemService.STORAGE_LOCATIONS;
 	}
 
 	@ModelAttribute("categories")
