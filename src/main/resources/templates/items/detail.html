@@ -2,47 +2,76 @@
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title th:text="${item.name}">Produkt</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title th:text="${item.name}">Item</title>
 	<link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<header class="topbar compact">
-	<div>
-		<h1 th:text="${item.name}">Produkt</h1>
-		<p>Detailansicht eines erfassten Lebensmittels</p>
+
+<div th:replace="~{fragments/navbar :: navbar('items')}"></div>
+
+<main class="container">
+
+	<div class="page-head">
+		<h1 th:text="${item.name}">Item</h1>
+		<p>Detailansicht eines erfassten Gegenstands</p>
 	</div>
-	<nav>
-		<a th:href="@{/}" class="button">Dashboard</a>
-		<a th:href="@{/items}" class="button">Zurück</a>
-		<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button primary">Bearbeiten</a>
-		<form th:action="@{/logout}" method="post" class="nav-form">
-			<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-			<button type="submit" class="button danger">Abmelden</button>
-		</form>
-	</nav>
-</header>
 
-<main class="container detail-layout">
-	<section class="panel image-panel">
-		<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}" th:src="${item.displayImageUrl}" alt="Produktbild" class="detail-image">
-		<div th:if="${item.displayImageUrl == null || item.displayImageUrl.isBlank()}" class="image-placeholder large">Kein Bild verfügbar</div>
-	</section>
+	<div class="detail-layout">
 
-	<section class="panel">
-		<div class="detail-grid">
-			<div><strong>Name</strong><span th:text="${item.name}"></span></div>
-			<div><strong>Marke</strong><span th:text="${item.brand ?: '-'}"></span></div>
-			<div><strong>Art</strong><span class="badge category-badge" th:classappend="${item.category.cssClass}" th:text="${item.category.label}"></span></div>
-			<div><strong>Barcode</strong><span th:text="${item.barcode ?: '-'}"></span></div>
-			<div><strong>Ablaufdatum</strong><span th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}"></span></div>
-			<div><strong>Menge</strong><span th:text="${item.quantity}"></span></div>
-			<div><strong>Lagerort</strong><span th:text="${item.storageLocation}"></span></div>
-			<div class="full-width"><strong>Status</strong><span th:if="${item.expired}">Abgelaufen</span><span th:if="${!item.expired && item.expiringSoon}">Läuft bald ab</span><span th:if="${!item.expired && !item.expiringSoon}">Alles okay</span></div>
-			<div class="full-width"><strong>Notizen</strong><span th:text="${item.notes ?: '-'}"></span></div>
-		</div>
-	</section>
+		<!-- Bild -->
+		<section class="panel image-panel">
+			<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}"
+				 th:src="${item.displayImageUrl}" alt="Item-Bild" class="detail-image">
+
+			<div th:if="${item.displayImageUrl == null || item.displayImageUrl.isBlank()}"
+				 class="image-placeholder large">Kein Bild verfügbar</div>
+		</section>
+
+		<!-- Details -->
+		<section class="panel stack">
+			<div class="detail-grid">
+				<div><strong>Name</strong><span th:text="${item.name}"></span></div>
+				<div><strong>Marke</strong><span th:text="${item.brand ?: '-'}"></span></div>
+				<div><strong>Kategorie</strong><span th:text="${item.category ?: '-'}"></span></div>
+				<div><strong>Barcode</strong><span th:text="${item.barcode ?: '-'}"></span></div>
+				<div><strong>Lagerort</strong><span th:text="${item.storageLocation ?: '-'}"></span></div>
+				<div><strong>Menge</strong><span th:text="${item.quantity}"></span></div>
+				<div><strong>Zustand</strong><span th:text="${item.condition ?: '-'}"></span></div>
+				<div><strong>Kaufdatum</strong>
+					<span th:text="${item.purchaseDate != null ? #temporals.format(item.purchaseDate, 'dd.MM.yyyy') : '-'}"></span></div>
+				<div><strong>Garantie bis</strong>
+					<span th:text="${item.warrantyUntil != null ? #temporals.format(item.warrantyUntil, 'dd.MM.yyyy') : '-'}"></span></div>
+				<div><strong>Mindestbestand</strong>
+					<span th:text="${item.minQuantity != null ? item.minQuantity : '-'}"></span></div>
+				<div><strong>Ablaufdatum</strong>
+					<span th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'dd.MM.yyyy') : '-'}"></span></div>
+
+				<div class="full-width">
+					<strong>Status</strong>
+					<span th:if="${item.expiryDate == null}">Kein Ablaufdatum</span>
+					<span th:if="${item.expiryDate != null && item.expired}" class="badge danger">Abgelaufen</span>
+					<span th:if="${item.expiryDate != null && !item.expired && item.expiringSoon}" class="badge warning">Läuft bald ab</span>
+					<span th:if="${item.expiryDate != null && !item.expired && !item.expiringSoon}">Alles okay</span>
+				</div>
+
+				<div class="full-width">
+					<strong>Notizen</strong>
+					<span th:text="${item.notes ?: '-'}"></span>
+				</div>
+			</div>
+
+			<div class="button-row">
+				<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button primary">Bearbeiten</a>
+				<a th:href="@{/items}" class="button">Zurück zum Inventar</a>
+			</div>
+		</section>
+
+	</div>
+
 </main>
+
 </body>
 </html>
-

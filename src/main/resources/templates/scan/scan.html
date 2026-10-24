@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title>Barcode scannen</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('scan')}"></div>
+
+<main class="container">
+
+	<div class="page-head">
+		<h1>Barcode scannen</h1>
+		<p>Scanne mit deinem Handy und übertrage das Produkt direkt in den Vorrat.</p>
+	</div>
+
+	<div class="two-column">
+
+		<section class="panel scanner-panel">
+			<h2>Mit Handy-Kamera scannen</h2>
+			<p class="hint">Fotografiere den Barcode. Die Erkennung startet automatisch nach der Aufnahme.</p>
+
+			<div class="capture-row">
+				<label class="button primary large" for="barcode-photo">Barcode fotografieren</label>
+				<label class="button large" for="barcode-gallery">Foto auswählen</label>
+			</div>
+			<input id="barcode-photo" class="visually-hidden" type="file" accept="image/*" capture="environment">
+			<input id="barcode-gallery" class="visually-hidden" type="file" accept="image/*">
+
+			<div id="live-section" class="stack hidden">
+				<div class="video-wrapper">
+					<video id="scanner-video" playsinline muted></video>
+					<div class="scan-frame"></div>
+				</div>
+				<canvas id="scanner-canvas" class="hidden"></canvas>
+				<div class="button-row">
+					<button type="button" class="button" id="start-scan">Live-Kamera starten</button>
+					<button type="button" class="button" id="stop-scan">Stoppen</button>
+				</div>
+			</div>
+
+			<p id="insecure-hint" class="hint-block hidden">
+				Der Live-Scan ist hier nicht verfügbar, weil Browser die Kamera nur über HTTPS freigeben.
+				„Barcode fotografieren“ funktioniert trotzdem.
+			</p>
+
+			<p id="scan-status" class="status-text" role="status" aria-live="polite">Bereit.</p>
+		</section>
+
+		<section class="panel stack">
+			<h2>Mit Barcode-Scanner oder Tastatur</h2>
+			<p class="hint">USB/Bluetooth-Scanner funktionieren als Tastatur. Nach dem Scan wird mit Enter automatisch gesucht.</p>
+
+			<form id="lookup-form" class="stack" method="get" th:action="@{/scan/result}">
+				<label for="barcode-input">Barcode eingeben oder scannen</label>
+				<div class="inline-form">
+					<input id="barcode-input" name="barcode" type="text" inputmode="numeric" autocomplete="off">
+					<button type="submit" class="button primary">Suchen</button>
+				</div>
+			</form>
+
+			<div class="hint-block">
+				<strong>Schnellablauf:</strong> Barcode fotografieren, Ergebnis kontrollieren, Produkt übernehmen.
+			</div>
+		</section>
+
+	</div>
+</main>
+
+<script th:src="@{/js/scan.js(v=5)}" charset="utf-8"></script>
+
+</body>
+</html>

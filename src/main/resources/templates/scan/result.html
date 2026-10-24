@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#22252b">
+    <title>Scan-Ergebnis</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('scan')}"></div>
+
+<main class="container">
+
+    <div class="page-head">
+        <h1>Scan-Ergebnis</h1>
+    </div>
+
+    <section class="panel" th:if="${lookup != null}">
+        <div class="lookup-result">
+            <div class="lookup-image-box">
+                <img th:if="${lookup.imageUrl != null and !#strings.isEmpty(lookup.imageUrl)}"
+                     th:src="${lookup.imageUrl}" alt="Produktbild">
+                <div th:if="${lookup.imageUrl == null or #strings.isEmpty(lookup.imageUrl)}"
+                     class="image-placeholder">Kein Bild</div>
+            </div>
+
+            <div class="stack">
+                <h2 th:text="${lookup.name}">Produktname</h2>
+
+                <div class="stack small-gap">
+                    <p style="margin:0"><strong>Barcode:</strong> <span th:text="${lookup.barcode}"></span></p>
+                    <p style="margin:0"><strong>Marke:</strong>
+                        <span th:text="${lookup.brand != null and !#strings.isEmpty(lookup.brand) ? lookup.brand : 'Unbekannt'}"></span></p>
+                    <p style="margin:0"><strong>Info:</strong> <span th:text="${lookup.message}"></span></p>
+                </div>
+
+                <!-- Schon im Inventar: Menge erhöhen statt doppelt anlegen -->
+                <div class="hint-block" th:if="${existing != null}">
+                    <strong>Schon im Inventar:</strong>
+                    <a th:href="@{/items/{id}(id=${existing.id})}" th:text="${existing.name}">Name</a>
+                    · Menge <span th:text="${existing.quantity}">1</span>
+                    <span th:if="${existing.storageLocation != null}">
+						· <span th:text="${existing.storageLocation}">Lagerort</span>
+					</span>
+                </div>
+
+                <div class="button-row" th:if="${existing != null}">
+                    <form method="post" th:action="@{/items/{id}/adjust(id=${existing.id})}">
+                        <input type="hidden" name="delta" value="1">
+                        <input type="hidden" name="next" th:value="@{/items}">
+                        <button type="submit" class="button primary large">Menge um 1 erhöhen</button>
+                    </form>
+                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl})}"
+                       class="button large">Trotzdem neu anlegen</a>
+                    <a th:href="@{/scan}" class="button large">Erneut scannen</a>
+                </div>
+
+                <div class="button-row" th:if="${existing == null}">
+                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl})}"
+                       class="button primary large">Produkt übernehmen</a>
+                    <a th:href="@{/scan}" class="button large">Erneut scannen</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" th:if="${lookup == null}">
+        <p class="empty-state">Kein Ergebnis gefunden.</p>
+        <div class="button-row">
+            <a th:href="@{/scan}" class="button primary">Erneut scannen</a>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>

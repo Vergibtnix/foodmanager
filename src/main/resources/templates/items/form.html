@@ -2,106 +2,213 @@
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title th:text="${pageTitle}">Lebensmittel</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title th:text="${pageTitle}">Item</title>
 	<link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<header class="topbar compact">
-	<div>
-		<h1 th:text="${pageTitle}">Lebensmittel</h1>
-		<p>Produkte mit Ablaufdatum, Marke und Bild verwalten</p>
-	</div>
-	<nav>
-		<a th:href="@{/}" class="button">Dashboard</a>
-		<a th:href="@{/items}" class="button">Bestand</a>
-		<a th:href="@{/scan}" class="button primary">Scannen</a>
-		<form th:action="@{/logout}" method="post" class="nav-form">
-			<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-			<button type="submit" class="button danger">Abmelden</button>
-		</form>
-	</nav>
-</header>
+
+<div th:replace="~{fragments/navbar :: navbar('items')}"></div>
 
 <main class="container">
-	<section class="panel form-panel">
-		<form th:action="${formAction}" th:object="${foodItemForm}" method="post" enctype="multipart/form-data" class="form-grid">
-			<div>
-				<label for="name">Name</label>
-				<input id="name" type="text" th:field="*{name}" placeholder="z. B. Milch">
-				<p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+
+	<div class="page-head">
+		<h1 th:text="${pageTitle}">Item</h1>
+		<p>Nur die Angaben, die zum Gegenstand passen. Den Rest blendet das Formular aus.</p>
+	</div>
+
+	<form id="item-form" class="item-form" th:action="${formAction}" th:object="${itemForm}"
+		  method="post" enctype="multipart/form-data" novalidate>
+		<input type="hidden" th:field="*{externalImageUrl}">
+
+		<div class="item-form-layout">
+
+			<div class="item-form-main">
+
+				<!-- 1. Produkt -->
+				<section class="panel form-section">
+					<h2>Produkt</h2>
+					<div class="field-row">
+						<div class="field span-all">
+							<label for="name">Name *</label>
+							<input id="name" type="text" th:field="*{name}" placeholder="z. B. Akkuschrauber" autocomplete="off" required>
+							<p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+						</div>
+
+						<div class="field">
+							<label for="brand">Marke</label>
+							<input id="brand" type="text" th:field="*{brand}" placeholder="z. B. Bosch" autocomplete="off">
+							<p class="field-error" th:if="${#fields.hasErrors('brand')}" th:errors="*{brand}"></p>
+						</div>
+
+						<div class="field">
+							<label for="barcode">Barcode</label>
+							<input id="barcode" type="text" inputmode="numeric" th:field="*{barcode}" placeholder="EAN / UPC" autocomplete="off">
+							<p class="field-error" th:if="${#fields.hasErrors('barcode')}" th:errors="*{barcode}"></p>
+						</div>
+					</div>
+				</section>
+
+				<!-- 2. Einordnung -->
+				<section class="panel form-section">
+					<h2>Einordnung</h2>
+
+					<div class="field">
+						<label for="category">Kategorie *</label>
+						<div class="picker" data-input="category">
+							<div class="chips" role="group" aria-label="Kategorie wählen">
+								<button type="button" class="chip" data-value="Lebensmittel">Lebensmittel</button>
+								<button type="button" class="chip" data-value="Getränk">Getränk</button>
+								<button type="button" class="chip" data-value="Medizin">Medizin</button>
+								<button type="button" class="chip" data-value="Werkzeug">Werkzeug</button>
+								<button type="button" class="chip" data-value="Elektronik">Elektronik</button>
+								<button type="button" class="chip" data-value="Kleidung">Kleidung</button>
+								<button type="button" class="chip chip-other" data-other>Andere …</button>
+							</div>
+							<div class="picker-custom">
+								<input id="category" type="text" th:field="*{category}" placeholder="Eigene Kategorie" autocomplete="off">
+							</div>
+						</div>
+						<p class="field-error js-error" hidden>Bitte eine Kategorie wählen oder eingeben.</p>
+						<p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+					</div>
+
+					<div class="field">
+						<label for="storageLocation">Lagerort *</label>
+						<div class="picker" data-input="storageLocation">
+							<div class="chips" role="group" aria-label="Lagerort wählen">
+								<button type="button" class="chip" data-value="Eiskasten">Eiskasten</button>
+								<button type="button" class="chip" data-value="Tiefkühler (Groß)">Tiefkühler (Groß)</button>
+								<button type="button" class="chip" data-value="Tiefkühler (Klein)">Tiefkühler (Klein)</button>
+								<button type="button" class="chip" data-value="Keller">Keller</button>
+								<button type="button" class="chip" data-value="Abstellraum">Abstellraum</button>
+								<button type="button" class="chip" data-value="Medizinkasten">Medizinkasten</button>
+								<button type="button" class="chip" data-value="Veranda">Veranda</button>
+								<button type="button" class="chip" data-value="Klo">Klo</button>
+								<button type="button" class="chip" data-value="Badezimmer">Badezimmer</button>
+								<button type="button" class="chip chip-other" data-other>Anderer …</button>
+							</div>
+							<div class="picker-custom">
+								<input id="storageLocation" type="text" th:field="*{storageLocation}" placeholder="Eigener Lagerort" autocomplete="off">
+							</div>
+						</div>
+						<p class="field-error js-error" hidden>Bitte einen Lagerort wählen oder eingeben.</p>
+						<p class="field-error" th:if="${#fields.hasErrors('storageLocation')}" th:errors="*{storageLocation}"></p>
+					</div>
+				</section>
+
+				<!-- 3. Bestand -->
+				<section class="panel form-section">
+					<h2>Bestand</h2>
+					<div class="field-row">
+						<div class="field">
+							<label for="quantity">Menge</label>
+							<div class="stepper">
+								<button type="button" class="stepper-btn" data-step="-1" data-target="quantity" aria-label="Menge verringern">−</button>
+								<input id="quantity" type="number" min="1" inputmode="numeric" th:field="*{quantity}">
+								<button type="button" class="stepper-btn" data-step="1" data-target="quantity" aria-label="Menge erhöhen">+</button>
+							</div>
+							<p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+						</div>
+
+						<div class="field">
+							<label for="minQuantity">Mindestbestand</label>
+							<input id="minQuantity" type="number" min="0" inputmode="numeric" th:field="*{minQuantity}" placeholder="z. B. 2">
+							<p class="hint small">Das Dashboard warnt, wenn weniger da ist.</p>
+							<p class="field-error" th:if="${#fields.hasErrors('minQuantity')}" th:errors="*{minQuantity}"></p>
+						</div>
+					</div>
+				</section>
+
+				<!-- 4. Details: erscheinen passend zur Kategorie -->
+				<section class="panel form-section">
+					<h2>Details</h2>
+					<p id="cond-hint" class="hint" hidden>Wähle eine Kategorie, dann erscheinen die passenden Felder (zum Beispiel Ablaufdatum oder Garantie).</p>
+
+					<div class="field-row">
+						<div class="field cond" data-group="expiry">
+							<label for="expiryDate">Ablaufdatum</label>
+							<input id="expiryDate" type="date" th:field="*{expiryDate}">
+							<div class="quick-row">
+								<button type="button" class="chip small" data-add="7:d">+1 Woche</button>
+								<button type="button" class="chip small" data-add="1:m">+1 Monat</button>
+								<button type="button" class="chip small" data-add="6:m">+6 Monate</button>
+								<button type="button" class="chip small" data-add="1:y">+1 Jahr</button>
+							</div>
+							<p class="field-error" th:if="${#fields.hasErrors('expiryDate')}" th:errors="*{expiryDate}"></p>
+						</div>
+
+						<div class="field cond" data-group="purchase">
+							<label for="purchaseDate">Kaufdatum</label>
+							<input id="purchaseDate" type="date" th:field="*{purchaseDate}">
+							<p class="field-error" th:if="${#fields.hasErrors('purchaseDate')}" th:errors="*{purchaseDate}"></p>
+						</div>
+
+						<div class="field cond" data-group="warranty">
+							<label for="warrantyUntil">Garantie bis</label>
+							<input id="warrantyUntil" type="date" th:field="*{warrantyUntil}">
+							<p class="field-error" th:if="${#fields.hasErrors('warrantyUntil')}" th:errors="*{warrantyUntil}"></p>
+						</div>
+
+						<div class="field cond" data-group="condition">
+							<label for="condition">Zustand</label>
+							<select id="condition" th:field="*{condition}">
+								<option value="">Bitte wählen</option>
+								<option value="Neu">Neu</option>
+								<option value="Gut">Gut</option>
+								<option value="Gebraucht">Gebraucht</option>
+								<option value="Defekt">Defekt</option>
+							</select>
+							<p class="field-error" th:if="${#fields.hasErrors('condition')}" th:errors="*{condition}"></p>
+						</div>
+					</div>
+				</section>
+
+				<!-- 5. Notizen (eingeklappt, solange leer) -->
+				<details class="panel more" th:open="${itemForm.notes != null and !#strings.isEmpty(itemForm.notes)}">
+					<summary>Notizen</summary>
+					<div class="field">
+						<label for="notes" class="visually-hidden">Notizen</label>
+						<textarea id="notes" rows="4" th:field="*{notes}" placeholder="z. B. Zubehör fehlt, Akku schwach"></textarea>
+						<p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+					</div>
+				</details>
+
 			</div>
 
-			<div>
-				<label for="brand">Marke</label>
-				<input id="brand" type="text" th:field="*{brand}" placeholder="z. B. Emmi">
-				<p class="field-error" th:if="${#fields.hasErrors('brand')}" th:errors="*{brand}"></p>
-			</div>
+			<!-- Seitenleiste: Bild -->
+			<aside class="item-form-side">
+				<section class="panel image-card"
+						 th:with="currentImg=${item != null && item.displayImageUrl != null && !item.displayImageUrl.isBlank()},
+								  externalImg=${itemForm.externalImageUrl != null && !itemForm.externalImageUrl.isBlank() && (item == null || item.imageFilename == null || item.imageFilename.isBlank())}">
+					<h2>Bild</h2>
 
-			<div>
-				<label for="barcode">Barcode</label>
-				<input id="barcode" type="text" th:field="*{barcode}" placeholder="EAN / UPC / weiterer Code">
-				<p class="field-error" th:if="${#fields.hasErrors('barcode')}" th:errors="*{barcode}"></p>
-			</div>
+					<div class="image-preview">
+						<img th:if="${currentImg}" th:src="${item.displayImageUrl}" alt="Aktuelles Bild">
+						<img th:if="${!currentImg and externalImg}" th:src="${itemForm.externalImageUrl}" alt="Erkanntes Produktbild">
+						<div th:if="${!currentImg and !externalImg}" class="image-placeholder">Noch kein Bild</div>
+					</div>
 
-			<div>
-				<label for="expiryDate">Ablaufdatum</label>
-				<input id="expiryDate" type="date" th:field="*{expiryDate}">
-				<p class="field-error" th:if="${#fields.hasErrors('expiryDate')}" th:errors="*{expiryDate}"></p>
-			</div>
+					<p class="hint small" th:if="${!currentImg and externalImg}">Erkanntes Produktbild. Du kannst es durch ein eigenes ersetzen.</p>
 
-			<div>
-				<label for="quantity">Menge</label>
-				<input id="quantity" type="number" min="1" th:field="*{quantity}">
-				<p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
-			</div>
+					<label for="image" class="button">Eigenes Bild wählen</label>
+					<input id="image" class="visually-hidden" type="file" name="image" accept="image/*">
+				</section>
+			</aside>
 
-			<div>
-				<label for="storageLocation">Lagerort</label>
-				<select id="storageLocation" th:field="*{storageLocation}">
-					<option th:each="location : ${storageLocations}" th:value="${location}" th:text="${location}"></option>
-					<option th:if="${foodItemForm.storageLocation != null && !#lists.contains(storageLocations, foodItemForm.storageLocation)}" th:value="${foodItemForm.storageLocation}" th:text="${foodItemForm.storageLocation}"></option>
-				</select>
-				<p class="field-error" th:if="${#fields.hasErrors('storageLocation')}" th:errors="*{storageLocation}"></p>
-			</div>
+		</div>
 
-			<div>
-				<label for="category">Art</label>
-				<select id="category" th:field="*{category}">
-					<option th:each="category : ${categories}" th:value="${category}" th:text="${category.label}"></option>
-				</select>
-				<p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
-			</div>
+		<div class="form-actions">
+			<button type="submit" class="button primary large">Speichern</button>
+			<a th:href="@{/items}" class="button large">Abbrechen</a>
+		</div>
+	</form>
 
-			<div class="full-width">
-				<label for="notes">Notizen</label>
-				<textarea id="notes" rows="4" th:field="*{notes}" placeholder="z. B. bereits geöffnet oder Sonderangebot"></textarea>
-				<p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
-			</div>
-
-			<div class="full-width">
-				<label for="image">Eigenes Bild hochladen (optional)</label>
-				<input id="image" type="file" name="image" accept="image/*">
-			</div>
-
-			<div class="full-width">
-				<label for="externalImageUrl">Externe Bild-URL (optional, z. B. vom Barcode-Lookup)</label>
-				<input id="externalImageUrl" type="url" th:field="*{externalImageUrl}" placeholder="https://...">
-				<p class="field-error" th:if="${#fields.hasErrors('externalImageUrl')}" th:errors="*{externalImageUrl}"></p>
-			</div>
-
-			<div class="full-width" th:if="${item != null && item.displayImageUrl != null && !item.displayImageUrl.isBlank()}">
-				<label>Aktuelles Bild</label>
-				<img th:src="${item.displayImageUrl}" alt="Aktuelles Produktbild" class="preview-image">
-			</div>
-
-			<div class="full-width button-row">
-				<button type="submit" class="button primary">Speichern</button>
-				<a th:href="@{/items}" class="button">Abbrechen</a>
-			</div>
-		</form>
-	</section>
 </main>
+
+<script th:src="@{/js/item-form.js(v=1)}" charset="utf-8"></script>
+
 </body>
 </html>
-

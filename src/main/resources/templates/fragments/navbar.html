@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/*@thymesVar id="authenticated" type="java.lang.Boolean"*/-->
+<!--/*@thymesVar id="loginUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="accountUrl" type="java.lang.String"*/-->
+
+<!-- Aufruf in jeder Seite: <div th:replace="~{fragments/navbar :: navbar('items')}"></div>
+     Erlaubte Werte: home, items, shopping, scan (markiert den aktiven Link).
+     "authenticated" setzt nur der HomeController. Auf allen anderen Seiten (null) ist man angemeldet,
+     weil sie ohne Login gar nicht erreichbar sind. -->
+<header class="navbar" th:fragment="navbar(active)">
+    <div class="navbar-inner" th:with="loggedIn=${authenticated == null or authenticated}">
+        <a class="brand" th:href="@{/}">Foodmanager</a>
+
+        <button type="button" class="nav-toggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-links">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav id="nav-links" class="nav-links" aria-label="Hauptnavigation">
+
+            <!-- Links sieht jeder. Wer nicht angemeldet ist, wird beim Klick zum Login geleitet. -->
+            <a th:href="@{/}" th:classappend="${active == 'home'} ? 'active'">Dashboard</a>
+            <a th:href="@{/items}" th:classappend="${active == 'items'} ? 'active'">Inventar</a>
+            <a th:href="@{/items/new}">Neu</a>
+            <a th:href="@{/shopping-list}" th:classappend="${active == 'shopping'} ? 'active'">Einkaufsliste</a>
+            <a th:href="@{/scan}" th:classappend="${loggedIn} ? 'nav-cta'">Scannen</a>
+
+            <!-- Angemeldet: Account-Menü -->
+            <div class="nav-dropdown" th:if="${loggedIn}">
+                <button type="button" class="nav-link nav-dropdown-toggle"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="account-menu">
+                    Account
+                    <svg class="caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+                        <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <div id="account-menu" class="dropdown-menu">
+                    <a th:if="${accountUrl != null}" th:href="${accountUrl}">Manage Account</a>
+                    <form th:action="@{/logout}" method="post">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="nav-link">Sign out</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Nicht angemeldet: Login als Hauptaktion -->
+            <a th:unless="${loggedIn}" th:href="${loginUrl ?: '/oauth2/authorization/keycloak'}" class="nav-cta">Anmelden</a>
+        </nav>
+
+        <script th:src="@{/js/nav.js}" defer></script>
+    </div>
+</header>
+
+</body>
+</html>

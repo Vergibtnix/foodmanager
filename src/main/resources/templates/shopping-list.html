@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#22252b">
+  <title>Einkaufsliste</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('shopping')}"></div>
+
+<main class="container">
+
+  <div class="page-head">
+    <h1>Einkaufsliste</h1>
+    <p>Was fehlt, steht hier. Vorschläge kommen aus dem Mindestbestand.</p>
+  </div>
+
+  <div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+  <div th:if="${infoMessage}" class="flash info" th:text="${infoMessage}"></div>
+
+  <!-- Eigenen Eintrag hinzufügen -->
+  <section class="panel">
+    <form method="post" th:action="@{/shopping-list/add}" class="add-form">
+      <label class="visually-hidden" for="new-entry">Neuer Eintrag</label>
+      <input id="new-entry" type="text" name="name" maxlength="200" placeholder="Etwas hinzufügen, z. B. Brot" autocomplete="off" required>
+      <button type="submit" class="button primary">Hinzufügen</button>
+    </form>
+  </section>
+
+  <!-- Vorschläge aus dem Mindestbestand -->
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Vorschläge (Mindestbestand)</h2>
+      <span class="badge warning" th:if="${!#lists.isEmpty(suggestions)}" th:text="${#lists.size(suggestions)}">0</span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(suggestions)}" class="empty-state">
+      <strong>Nichts unter dem Mindestbestand.</strong>
+      <p>Sobald von etwas weniger da ist als eingestellt, taucht es hier auf.</p>
+    </div>
+
+    <ul class="list-rows" th:if="${!#lists.isEmpty(suggestions)}">
+      <li class="list-row" th:each="s : ${suggestions}">
+        <div class="row-main">
+          <a class="row-title" th:href="@{/items/{id}(id=${s.item.id})}" th:text="${s.item.name}">Name</a>
+          <span class="row-sub">
+						<span th:text="'Es fehlen ' + ${s.missing}">Es fehlen 2</span>
+						· vorhanden <span th:text="${s.item.quantity}">1</span>
+						von mindestens <span th:text="${s.item.minQuantity}">3</span>
+					</span>
+        </div>
+        <form method="post" th:action="@{/shopping-list/bought/{id}(id=${s.item.id})}">
+          <button type="submit" class="button small primary" title="Bestand auf den Mindestbestand auffüllen">Gekauft</button>
+        </form>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Eigene Einträge -->
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Meine Einträge</h2>
+      <form method="post" th:action="@{/shopping-list/clear-done}"
+            th:if="${#lists.size(entries.?[done]) > 0}">
+        <button type="submit" class="button small">Erledigte entfernen</button>
+      </form>
+    </div>
+
+    <div th:if="${#lists.isEmpty(entries)}" class="empty-state">
+      <strong>Noch keine eigenen Einträge.</strong>
+      <p>Schreib oben auf, was du außerdem brauchst.</p>
+    </div>
+
+    <ul class="list-rows" th:if="${!#lists.isEmpty(entries)}">
+      <li class="list-row" th:each="entry : ${entries}" th:classappend="${entry.done} ? 'is-done'">
+        <form method="post" th:action="@{/shopping-list/{id}/toggle(id=${entry.id})}">
+          <button type="submit" class="check-btn" th:attr="aria-label=${entry.done} ? 'Wieder offen setzen' : 'Abhaken'">
+            <span th:if="${entry.done}">✓</span>
+          </button>
+        </form>
+        <div class="row-main">
+          <span class="row-title" th:text="${entry.name}">Brot</span>
+        </div>
+        <form method="post" th:action="@{/shopping-list/{id}/delete(id=${entry.id})}">
+          <button type="submit" class="qty-btn" aria-label="Eintrag löschen" title="Löschen">✕</button>
+        </form>
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+</body>
+</html>
