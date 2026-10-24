@@ -6,8 +6,6 @@ import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,8 +15,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
 @Entity
-@Table(name = "food_items")
-public class FoodItem {
+@Table(name = "items")
+public class Item {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,18 +31,17 @@ public class FoodItem {
 	@Column(length = 64)
 	private String barcode;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private LocalDate expiryDate;
 
 	@Column(nullable = false)
 	private Integer quantity = 1;
 
-	@Column(nullable = false, length = 120)
-	private String storageLocation = "Eiskasten";
+	@Column(nullable = true, length = 120)
+	private String storageLocation;
 
-	@Enumerated(EnumType.STRING)
-	@Column(length = 40)
-	private ProductCategory category = ProductCategory.SONSTIGES;
+	@Column(nullable = false, length = 120)
+	private String category;
 
 	@Column(length = 500)
 	private String notes;
@@ -54,6 +51,15 @@ public class FoodItem {
 
 	@Column(length = 500)
 	private String externalImageUrl;
+
+	private LocalDate purchaseDate;
+
+	private LocalDate warrantyUntil;
+
+	@Column(length = 40)
+	private String condition;
+
+	private Integer minQuantity;
 
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
@@ -128,12 +134,12 @@ public class FoodItem {
 		this.storageLocation = storageLocation;
 	}
 
-	public ProductCategory getCategory() {
-		return category == null ? ProductCategory.SONSTIGES : category;
+	public String getCategory() {
+		return category;
 	}
 
-	public void setCategory(ProductCategory category) {
-		this.category = category == null ? ProductCategory.SONSTIGES : category;
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
 	public String getNotes() {
@@ -160,6 +166,38 @@ public class FoodItem {
 		this.externalImageUrl = externalImageUrl;
 	}
 
+	public LocalDate getPurchaseDate() {
+		return purchaseDate;
+	}
+
+	public void setPurchaseDate(LocalDate purchaseDate) {
+		this.purchaseDate = purchaseDate;
+	}
+
+	public LocalDate getWarrantyUntil() {
+		return warrantyUntil;
+	}
+
+	public void setWarrantyUntil(LocalDate warrantyUntil) {
+		this.warrantyUntil = warrantyUntil;
+	}
+
+	public String getCondition() {
+		return condition;
+	}
+
+	public void setCondition(String condition) {
+		this.condition = condition;
+	}
+
+	public Integer getMinQuantity() {
+		return minQuantity;
+	}
+
+	public void setMinQuantity(Integer minQuantity) {
+		this.minQuantity = minQuantity;
+	}
+
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
@@ -184,8 +222,8 @@ public class FoodItem {
 	@Transient
 	public boolean isExpiringSoon() {
 		return expiryDate != null
-			&& !isExpired()
-			&& !expiryDate.isAfter(LocalDate.now().plusDays(7));
+				&& !isExpired()
+				&& !expiryDate.isAfter(LocalDate.now().plusDays(7));
 	}
 
 	@Transient
@@ -203,5 +241,11 @@ public class FoodItem {
 		}
 		return externalImageUrl;
 	}
-}
 
+	public String getType() {
+        return "";
+    }
+
+	public void setType(String s) {
+	}
+}
