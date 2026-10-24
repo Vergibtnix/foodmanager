@@ -1,327 +1,232 @@
-const barcodeInput = document.getElementById('barcode-input');
-const lookupForm = document.getElementById('lookup-form');
-const statusText = document.getElementById('scan-status');
-const startButton = document.getElementById('start-scan');
-const stopButton = document.getElementById('stop-scan');
-const analyzeFrameButton = document.getElementById('analyze-frame');
-const video = document.getElementById('scanner-video');
-const lookupResult = document.getElementById('lookup-result');
-const lookupName = document.getElementById('lookup-name');
-const lookupBrand = document.getElementById('lookup-brand');
-const lookupBarcodeValue = document.getElementById('lookup-barcode');
-const lookupMessage = document.getElementById('lookup-message');
-const lookupImage = document.getElementById('lookup-image');
-const imagePlaceholder = document.getElementById('lookup-image-placeholder');
-const createLink = document.getElementById('create-link');
+(() => {
+	'use strict';
 
-const state = {
-	stream: null,
-	scanning: false,
-	detector: null,
-	lastDetectedBarcode: '',
-	scanStartedAt: 0,
-	noDetectionHintShown: false,
-	frameDecodeInProgress: false,
-	lookupInProgress: false,
-	lastFrameDecodeAt: 0,
-	lastStatusMessage: ''
-};
+	const $ = id => document.getElementById(id);
 
-const frameCanvas = document.createElement('canvas');
+	const barcodeInput = $('barcode-input');
+	const lookupForm = $('lookup-form');
+	const statusText = $('scan-status');
+	const photoInputs = [$('barcode-photo'), $('barcode-gallery')].filter(Boolean);
+	const liveSection = $('live-section');
+	const insecureHint = $('insecure-hint');
+	const video = $('scanner-video');
+	const canvas = $('scanner-canvas');
+	const startButton = $('start-scan');
+	const stopButton = $('stop-scan');
 
-function setControlsDisabled(isScanning) {
-	startButton.disabled = isScanning;
-	stopButton.disabled = !isScanning;
-	analyzeFrameButton.disabled = !state.stream || state.frameDecodeInProgress || state.lookupInProgress;
-}
+	const MAX_SIDE = 1600;
 
-async function openCameraStream() {
-	const preferredConstraints = {
-		video: {
-			facingMode: { ideal: 'environment' },
-			width: { ideal: 1280 },
-			height: { ideal: 720 }
-		},
-		audio: false
-	};
+	let stream = null;
+	let scanTimer = null;
+	let detector = null;
+	let isBusy = false;
+	let finished = false;
 
-	try {
-		return await navigator.mediaDevices.getUserMedia(preferredConstraints);
-	} catch (error) {
-		return navigator.mediaDevices.getUserMedia({
-			video: true,
-			audio: false
-		});
-	}
-}
-
-function setStatus(message) {
-	if (state.lastStatusMessage === message) {
-		return;
-	}
-	state.lastStatusMessage = message;
-	statusText.textContent = message;
-}
-
-function resetLookupResult() {
-	lookupResult.classList.add('hidden');
-	lookupName.textContent = 'Noch kein Produkt geladen';
-	lookupBrand.textContent = '-';
-	lookupBarcodeValue.textContent = '-';
-	lookupMessage.textContent = '';
-	lookupImage.removeAttribute('src');
-	lookupImage.classList.add('hidden');
-	imagePlaceholder.classList.remove('hidden');
-	createLink.href = '#';
-}
-
-function updateCreateLink(result) {
-	const params = new URLSearchParams({ barcode: result.barcode || '' });
-	if (result.name) {
-		params.set('name', result.name);
-	}
-	if (result.brand) {
-		params.set('brand', result.brand);
-	}
-	if (result.imageUrl) {
-		params.set('imageUrl', result.imageUrl);
-	}
-	createLink.href = `/items/new?${params.toString()}`;
-}
-
-function renderLookupResult(result) {
-	lookupResult.classList.remove('hidden');
-	lookupName.textContent = result.name || 'Produkt manuell ergänzen';
-	lookupBrand.textContent = result.brand || '-';
-	lookupBarcodeValue.textContent = result.barcode || '-';
-	lookupMessage.textContent = result.message || '';
-	updateCreateLink(result);
-
-	if (result.imageUrl) {
-		lookupImage.src = result.imageUrl;
-		lookupImage.classList.remove('hidden');
-		imagePlaceholder.classList.add('hidden');
-	} else {
-		lookupImage.removeAttribute('src');
-		lookupImage.classList.add('hidden');
-		imagePlaceholder.classList.remove('hidden');
-	}
-}
-
-async function performBarcodeLookup(barcode) {
-	const cleanedBarcode = (barcode || '').trim();
-	if (!cleanedBarcode) {
-		setStatus('Bitte gib zuerst einen Barcode ein.');
-		return;
+	function setStatus(message, kind) {
+		if (!statusText) return;
+		statusText.textContent = message;
+		statusText.classList.remove('ok', 'error');
+		if (kind) statusText.classList.add(kind);
 	}
 
-	state.lookupInProgress = true;
-	setControlsDisabled(state.scanning);
-	setStatus('Produktdaten werden geladen ...');
+	const sanitizeBarcode = value => (value || '').replace(/[^0-9]/g, '').trim();
 
-	try {
-		const response = await fetch(`/api/barcodes/lookup?barcode=${encodeURIComponent(cleanedBarcode)}`);
-		if (!response.ok) {
-			throw new Error(`Lookup fehlgeschlagen (${response.status})`);
-		}
-		const result = await response.json();
-		renderLookupResult(result);
-		setStatus(result.found ? 'Produkt gefunden.' : 'Produkt nicht gefunden. Du kannst es manuell anlegen.');
-	} catch (error) {
-		renderLookupResult({
-			found: false,
-			barcode: cleanedBarcode,
-			name: '',
-			brand: '',
-			imageUrl: '',
-			message: 'Lookup fehlgeschlagen. Bitte Produkt manuell anlegen.'
-		});
-		setStatus('Lookup fehlgeschlagen.');
-	} finally {
-		state.lookupInProgress = false;
-		setControlsDisabled(state.scanning);
-	}
-}
-
-function handleDetectedBarcode(barcode, sourceLabel) {
-	const detectedValue = (barcode || '').trim();
-	if (!detectedValue || detectedValue === state.lastDetectedBarcode) {
-		return;
+	function goToResult(barcode) {
+		finished = true;
+		stopCamera();
+		setStatus('Barcode erkannt: ' + barcode, 'ok');
+		window.location.href = '/scan/result?barcode=' + encodeURIComponent(barcode);
 	}
 
-	state.lastDetectedBarcode = detectedValue;
-	barcodeInput.value = detectedValue;
-	setStatus(`Barcode erkannt (${sourceLabel}): ${detectedValue}`);
-	stopScan();
-	performBarcodeLookup(detectedValue);
-}
+	// ---------- Foto: funktioniert auch ohne HTTPS ----------
 
-async function captureVideoFrame() {
-	if (!state.stream || !video.videoWidth || !video.videoHeight) {
-		return null;
-	}
-
-	frameCanvas.width = video.videoWidth;
-	frameCanvas.height = video.videoHeight;
-	const context = frameCanvas.getContext('2d', { willReadFrequently: true });
-	context.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
-
-	return new Promise(resolve => {
-		frameCanvas.toBlob(resolve, 'image/jpeg', 0.92);
-	});
-}
-
-async function decodeCurrentFrame(manualTrigger = false) {
-	if (!state.stream || state.frameDecodeInProgress || state.lookupInProgress) {
-		return;
-	}
-
-	state.frameDecodeInProgress = true;
-	state.lastFrameDecodeAt = Date.now();
-	setControlsDisabled(state.scanning);
-	if (manualTrigger) {
-		setStatus('Aktuelles Kamerabild wird geprüft ...');
-	}
-
-	try {
-		const imageBlob = await captureVideoFrame();
-		if (!imageBlob) {
-			if (manualTrigger) {
-				setStatus('Kamerabild ist noch nicht bereit. Bitte kurz warten und erneut versuchen.');
+	// Handyfotos sind oft 5-12 MB. Verkleinern spart Upload-Zeit und bleibt unter dem 10-MB-Limit.
+	async function downscale(blob) {
+		try {
+			const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+			const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+			if (scale === 1 && blob.size < 1.5 * 1024 * 1024) {
+				if (bitmap.close) bitmap.close();
+				return blob;
 			}
-			return;
+			const c = document.createElement('canvas');
+			c.width = Math.round(bitmap.width * scale);
+			c.height = Math.round(bitmap.height * scale);
+			c.getContext('2d').drawImage(bitmap, 0, 0, c.width, c.height);
+			if (bitmap.close) bitmap.close();
+			return await new Promise(resolve => c.toBlob(b => resolve(b || blob), 'image/jpeg', 0.9));
+		} catch (e) {
+			return blob;
 		}
+	}
 
-		const formData = new FormData();
-		formData.append('image', imageBlob, 'camera-frame.jpg');
+	async function decodeOnServer(blob, silent) {
+		if (isBusy || finished) return false;
+		isBusy = true;
+		if (!silent) setStatus('Barcode wird erkannt …');
 
-		const response = await fetch('/api/barcodes/decode', {
-			method: 'POST',
-			body: formData
+		try {
+			const formData = new FormData();
+			formData.append('image', blob, 'scan.jpg');
+
+			const response = await fetch('/api/barcodes/decode', { method: 'POST', body: formData });
+			if (!response.ok) throw new Error('HTTP ' + response.status);
+
+			const result = await response.json();
+			const barcode = sanitizeBarcode(result.barcode);
+
+			if (result.detected && barcode) {
+				goToResult(barcode);
+				return true;
+			}
+			if (!silent) {
+				setStatus(result.message || 'Kein Barcode erkannt. Geh näher ran und sorge für gutes Licht.', 'error');
+			}
+		} catch (e) {
+			if (!silent) setStatus('Fehler bei der Barcode-Erkennung. Bitte erneut versuchen.', 'error');
+		} finally {
+			isBusy = false;
+		}
+		return false;
+	}
+
+	async function handlePhoto(input) {
+		const file = input.files && input.files[0];
+		if (!file) return;
+		setStatus('Foto wird vorbereitet …');
+		const blob = await downscale(file);
+		await decodeOnServer(blob, false);
+		input.value = ''; // dasselbe Foto kann erneut gewählt werden
+	}
+
+	photoInputs.forEach(input => input.addEventListener('change', () => handlePhoto(input)));
+
+	// ---------- Live-Kamera: braucht HTTPS (oder localhost) ----------
+
+	const liveSupported = window.isSecureContext
+		&& navigator.mediaDevices
+		&& typeof navigator.mediaDevices.getUserMedia === 'function';
+
+	async function createDetector() {
+		if (!('BarcodeDetector' in window)) return null;
+		try {
+			const supported = await window.BarcodeDetector.getSupportedFormats();
+			const wanted = ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(f => supported.includes(f));
+			return wanted.length ? new window.BarcodeDetector({ formats: wanted }) : null;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function grabFrame() {
+		const scale = Math.min(1, MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
+		canvas.width = Math.round(video.videoWidth * scale);
+		canvas.height = Math.round(video.videoHeight * scale);
+		canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+		return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+	}
+
+	function scheduleScan() {
+		clearTimeout(scanTimer);
+		if (!stream || finished) return;
+		scanTimer = setTimeout(scanTick, detector ? 250 : 1500);
+	}
+
+	async function scanTick() {
+		if (!stream || finished) return;
+
+		if (video.readyState >= 2 && video.videoWidth) {
+			try {
+				if (detector) {
+					const codes = await detector.detect(video);
+					const barcode = sanitizeBarcode(codes[0] && codes[0].rawValue);
+					if (barcode) {
+						goToResult(barcode);
+						return;
+					}
+				} else {
+					const blob = await grabFrame();
+					if (blob && await decodeOnServer(blob, true)) return;
+				}
+			} catch (e) {
+				// einfach beim nächsten Durchlauf erneut versuchen
+			}
+		}
+		scheduleScan();
+	}
+
+	async function startCamera() {
+		stopCamera();
+		try {
+			stream = await navigator.mediaDevices.getUserMedia({
+				video: {
+					facingMode: { ideal: 'environment' },
+					width: { ideal: 1280 },
+					height: { ideal: 720 }
+				},
+				audio: false
+			});
+			video.srcObject = stream;
+			await video.play();
+			detector = await createDetector();
+			setStatus('Kamera aktiv. Halte den Barcode in den Rahmen, er wird automatisch erkannt.');
+			scheduleScan();
+		} catch (error) {
+			stopCamera();
+			const denied = error && (error.name === 'NotAllowedError' || error.name === 'SecurityError');
+			setStatus(denied
+				? 'Kamerazugriff blockiert. Erlaube die Kamera in den Browser-Einstellungen oder nutze „Barcode fotografieren“.'
+				: 'Die Kamera konnte nicht gestartet werden. Nutze „Barcode fotografieren“.', 'error');
+		}
+	}
+
+	function stopCamera() {
+		clearTimeout(scanTimer);
+		if (stream) {
+			stream.getTracks().forEach(track => track.stop());
+			stream = null;
+		}
+		if (video) {
+			video.pause();
+			video.srcObject = null;
+		}
+	}
+
+	if (liveSupported && liveSection) {
+		liveSection.classList.remove('hidden');
+	} else if (insecureHint) {
+		insecureHint.classList.remove('hidden');
+	}
+
+	if (startButton) startButton.addEventListener('click', startCamera);
+
+	if (stopButton) {
+		stopButton.addEventListener('click', () => {
+			stopCamera();
+			setStatus('Kamera gestoppt.');
 		});
-		if (!response.ok) {
-			throw new Error(`Decode fehlgeschlagen (${response.status})`);
-		}
-
-		const result = await response.json();
-		if (result.detected && result.barcode) {
-			handleDetectedBarcode(result.barcode, 'Kamerabild');
-			return;
-		}
-
-		if (manualTrigger) {
-			setStatus(result.message || 'Im aktuellen Kamerabild wurde kein Barcode erkannt.');
-		}
-	} catch (error) {
-		if (manualTrigger) {
-			setStatus('Kamerabild konnte nicht ausgewertet werden. Bitte erneut versuchen oder Barcode manuell eingeben.');
-		}
-	} finally {
-		state.frameDecodeInProgress = false;
-		setControlsDisabled(state.scanning);
-	}
-}
-
-async function detectLoop() {
-	if (!state.scanning) {
-		return;
 	}
 
-	try {
-		if (state.detector) {
-			const barcodes = await state.detector.detect(video);
-			if (barcodes.length > 0) {
-				handleDetectedBarcode(barcodes[0].rawValue, 'Live-Scanner');
+	// ---------- Scanner/Tastatur ----------
+
+	if (lookupForm && barcodeInput) {
+		lookupForm.addEventListener('submit', event => {
+			event.preventDefault();
+			const barcode = sanitizeBarcode(barcodeInput.value);
+
+			if (!barcode) {
+				setStatus('Bitte einen gültigen Barcode scannen oder eingeben.', 'error');
 				return;
 			}
-		}
+			goToResult(barcode);
+		});
 
-		const elapsedMs = Date.now() - state.scanStartedAt;
-		if (elapsedMs > 2200 && Date.now() - state.lastFrameDecodeAt > 1600) {
-			decodeCurrentFrame(false);
-		}
-
-		if (!state.noDetectionHintShown && Date.now() - state.scanStartedAt > 4000) {
-			state.noDetectionHintShown = true;
-			setStatus('Noch nichts erkannt. Ich prüfe zusätzlich das Kamerabild. Halte den Barcode näher und möglichst gerade vor die Kamera, vermeide Spiegelungen und sorge für gutes Licht.');
-		}
-	} catch (error) {
-		if (!state.noDetectionHintShown) {
-			setStatus('Scanner aktiv. Suche nach Barcode ...');
+		// Auf dem Handy nicht automatisch fokussieren, sonst springt die Tastatur auf.
+		if (window.matchMedia('(pointer: fine)').matches) {
+			setTimeout(() => barcodeInput.focus(), 50);
 		}
 	}
 
-	requestAnimationFrame(detectLoop);
-}
-
-async function startScan() {
-	if (!navigator.mediaDevices?.getUserMedia) {
-		setStatus('Dein Browser unterstützt keinen Kamerazugriff. Bitte Barcode manuell eingeben.');
-		return;
-	}
-
-	try {
-		const supportsBarcodeDetector = 'BarcodeDetector' in window;
-		state.stream = await openCameraStream();
-		video.srcObject = state.stream;
-		await video.play();
-		state.detector = supportsBarcodeDetector
-			? new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] })
-			: null;
-		state.scanning = true;
-		state.lastDetectedBarcode = '';
-		state.scanStartedAt = Date.now();
-		state.noDetectionHintShown = false;
-		state.frameDecodeInProgress = false;
-		state.lookupInProgress = false;
-		state.lastFrameDecodeAt = 0;
-		resetLookupResult();
-		setControlsDisabled(true);
-
-		if (supportsBarcodeDetector) {
-			setStatus('Scanner läuft. Live-Erkennung und zusätzliche Kamerabild-Prüfung sind aktiv. Halte den Barcode gut sichtbar vor die Kamera.');
-			requestAnimationFrame(detectLoop);
-			return;
-		}
-
-		setStatus('Kamera läuft. Dein Browser unterstützt keinen nativen Scanner, daher nutze ich die Bildanalyse im Hintergrund. Du kannst auch auf „Aktuelles Bild prüfen“ klicken.');
-		requestAnimationFrame(detectLoop);
-	} catch (error) {
-		setControlsDisabled(false);
-		setStatus('Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen oder Barcode manuell eingeben.');
-	}
-}
-
-function stopScan() {
-	state.scanning = false;
-	state.detector = null;
-	state.scanStartedAt = 0;
-	state.noDetectionHintShown = false;
-	state.frameDecodeInProgress = false;
-	state.lastFrameDecodeAt = 0;
-	if (state.stream) {
-		state.stream.getTracks().forEach(track => track.stop());
-		state.stream = null;
-	}
-	video.srcObject = null;
-	setControlsDisabled(false);
-}
-
-lookupForm?.addEventListener('submit', event => {
-	event.preventDefault();
-	performBarcodeLookup(barcodeInput.value);
-});
-
-startButton?.addEventListener('click', startScan);
-stopButton?.addEventListener('click', () => {
-	stopScan();
-	setStatus('Scanner gestoppt.');
-});
-analyzeFrameButton?.addEventListener('click', () => {
-	decodeCurrentFrame(true);
-});
-
-window.addEventListener('beforeunload', stopScan);
-
-setControlsDisabled(false);
-
+	window.addEventListener('pagehide', stopCamera);
+	setStatus('Bereit. Fotografiere einen Barcode oder gib die Nummer ein.');
+})();

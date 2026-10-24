@@ -1,6 +1,7 @@
 package com.example.foodmanager;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -22,7 +23,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.example.foodmanager.repository.FoodItemRepository;
+import com.example.foodmanager.repository.ItemRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -37,52 +38,66 @@ class FoodmanagerWebTests {
 	private MockMvc mockMvc;
 
 	@Autowired
-	private FoodItemRepository foodItemRepository;
+	private ItemRepository itemRepository;
 
 	@AfterEach
 	void cleanUp() {
-		foodItemRepository.deleteAll();
+		itemRepository.deleteAll();
 	}
 
 	@Test
 	void homePageLoads() throws Exception {
 		mockMvc.perform(get("/"))
-			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Foodmanager")));
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Home Inventory Manager")));
 	}
 
 	@Test
 	void scanPageAndEmptyBarcodeLookupWork() throws Exception {
 		mockMvc.perform(get("/scan"))
-			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Barcode scannen")));
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Barcode scannen")));
 
 		mockMvc.perform(get("/api/barcodes/lookup").param("barcode", "   "))
-			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Bitte gib einen Barcode ein.")));
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Bitte gib einen Barcode ein.")));
 	}
 
 	@Test
-	void canCreateAndListFoodItem() throws Exception {
+	void canCreateAndListItem() throws Exception {
 		mockMvc.perform(multipart("/items")
-				.file(new MockMultipartFile("image", new byte[0]))
-				.param("name", "Milch")
-				.param("brand", "Beispiel Marke")
-				.param("barcode", "7613035974685")
-				.param("expiryDate", LocalDate.now().plusDays(5).toString())
-				.param("quantity", "2")
-				.param("storageLocation", "Kühlschrank")
-				.param("notes", "Testprodukt")
-				.param("externalImageUrl", ""))
-			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/items"));
+						.file(new MockMultipartFile("image", new byte[0]))
+						.param("name", "Milch")
+						.param("brand", "Beispiel Marke")
+						.param("barcode", "7613035974685")
+						.param("expiryDate", LocalDate.now().plusDays(5).toString())
+						.param("quantity", "2")
+						.param("storageLocation", "Eiskasten")
+						.param("category", "Lebensmittel")          // Pflichtfeld (@NotBlank)
+						.param("notes", "Testprodukt")
+						.param("externalImageUrl", ""))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/items"));
 
-		assertThat(foodItemRepository.count()).isEqualTo(1);
+		assertThat(itemRepository.count()).isEqualTo(1);
 
 		mockMvc.perform(get("/items"))
-			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Milch")))
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Beispiel Marke")));
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Milch")))
+				.andExpect(content().string(containsString("Beispiel Marke")));
+	}
+
+	@Test
+	void createItemWithoutCategoryShowsValidationError() throws Exception {
+		mockMvc.perform(multipart("/items")
+						.file(new MockMultipartFile("image", new byte[0]))
+						.param("name", "Milch")
+						.param("storageLocation", "Eiskasten")
+						.param("quantity", "1"))
+				.andExpect(status().isOk())   // Formular wird erneut angezeigt
+				.andExpect(content().string(containsString("Bitte eine Kategorie eingeben!")));
+
+		assertThat(itemRepository.count()).isZero();
 	}
 
 	@Test
@@ -94,10 +109,9 @@ class FoodmanagerWebTests {
 		ImageIO.write(image, "png", outputStream);
 
 		mockMvc.perform(multipart("/api/barcodes/decode")
-				.file(new MockMultipartFile("image", "frame.png", "image/png", outputStream.toByteArray())))
-			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("\"detected\":true")))
-			.andExpect(content().string(org.hamcrest.Matchers.containsString(barcode)));
+						.file(new MockMultipartFile("image", "frame.png", "image/png", outputStream.toByteArray())))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"detected\":true")))
+				.andExpect(content().string(containsString(barcode)));
 	}
 }
-

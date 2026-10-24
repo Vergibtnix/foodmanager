@@ -42,8 +42,9 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
 								"/", "/error", "/css/**", "/js/**", "/images/**",
+								"/icons/**", "/manifest.webmanifest",   // App-Symbol und Manifest müssen ohne Login ladbar sein
 								"/h2-console/**", "/oauth2/**", "/login/oauth2/**",
-								"/api/barcodes/**"          // <‑‑ WICHTIG: Barcode-API freigeben
+								"/api/barcodes/**"
 						).permitAll()
 						.anyRequest().authenticated()
 				)
