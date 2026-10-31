@@ -6,7 +6,7 @@
 	<meta name="color-scheme" content="dark">
 	<meta name="theme-color" content="#22252b">
 	<title>Foodmanager</title>
-	<link rel="stylesheet" th:href="@{/css/app.css}">
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body class="home-bg">
 
@@ -14,7 +14,7 @@
 
 <main class="container">
 
-	<div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+	<div th:replace="~{fragments/flash :: messages('/')}"></div>
 
 	<!-- Begrüßung (nur angemeldet) -->
 	<section class="hero-card" th:if="${authenticated}">
@@ -28,37 +28,50 @@
 		</div>
 	</section>
 
-	<!-- Kennzahlen: sehen alle, auch ohne Anmeldung -->
-	<section class="stats-grid">
-		<article class="stat-card">
-			<span class="stat-label">Gesamtanzahl Items</span>
-			<strong th:text="${summary.totalItems}">0</strong>
-		</article>
+	<!-- Noch nicht installiert? Einmal tippen und Foodmanager liegt als App am Startbildschirm (install.js) -->
+	<button type="button" class="install-btn install-banner" hidden>
+		<span class="install-banner-icon" aria-hidden="true">
+			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+		</span>
+		<span>
+			<strong>Foodmanager als App installieren</strong>
+			<span class="install-banner-sub">Startet vom Startbildschirm, ohne Browser-Leiste.</span>
+		</span>
+	</button>
 
-		<article class="stat-card danger">
+	<!-- Serien-Scan hat neue Produkte gesammelt -->
+	<a th:if="${pendingCount != null and pendingCount > 0}" th:href="@{/scan/inbox}" class="notice-link">
+		<strong th:text="${pendingCount} + (${pendingCount == 1} ? ' Produkt wartet' : ' Produkte warten')">2 Produkte warten</strong>
+		<span>aufs Einräumen →</span>
+	</a>
+
+	<!-- Kennzahlen: sehen alle, auch ohne Anmeldung. Antippen öffnet das Inventar mit passendem Filter. -->
+	<section class="stats-grid">
+		<!-- "is-zero": Warnfarbe nur, wenn es wirklich etwas zu tun gibt -->
+		<a class="stat-card total" th:href="@{/items}">
+			<span class="stat-label">Im Inventar</span>
+			<strong th:text="${summary.totalItems}">0</strong>
+		</a>
+
+		<a class="stat-card danger" th:href="@{/items(filter='expired')}" th:classappend="${expiredCount == 0} ? 'is-zero'">
 			<span class="stat-label">Abgelaufen</span>
 			<strong th:text="${expiredCount}">0</strong>
-		</article>
+		</a>
 
-		<article class="stat-card warning">
+		<a class="stat-card warning" th:href="@{/items(filter='soon')}" th:classappend="${expiringSoonCount == 0} ? 'is-zero'">
 			<span class="stat-label">Läuft bald ab</span>
 			<strong th:text="${expiringSoonCount}">0</strong>
-		</article>
+		</a>
 
-		<article class="stat-card warning">
-			<span class="stat-label">Mindestbestand unterschritten</span>
+		<a class="stat-card warning" th:href="@{/shopping-list}" th:classappend="${summary.itemsBelowMinQuantity == 0} ? 'is-zero'">
+			<span class="stat-label">Nachkaufen</span>
 			<strong th:text="${summary.itemsBelowMinQuantity}">0</strong>
-		</article>
+		</a>
 
-		<article class="stat-card danger">
-			<span class="stat-label">Garantie läuft bald ab</span>
-			<strong th:text="${summary.itemsWarrantyExpiringSoon}">0</strong>
-		</article>
-
-		<article class="stat-card danger">
-			<span class="stat-label">Defekte Items</span>
+		<a class="stat-card danger" th:href="@{/items(filter='defect')}" th:if="${summary.itemsDefective > 0}">
+			<span class="stat-label">Defekt</span>
 			<strong th:text="${summary.itemsDefective}">0</strong>
-		</article>
+		</a>
 	</section>
 
 	<!-- Als Nächstes fällig (nur angemeldet, enthält Namen) -->
@@ -80,7 +93,7 @@
 					<a th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Name</a>
 					<span class="due-meta">
 						<span th:text="${item.storageLocation ?: 'Ohne Lagerort'}">Lagerort</span>
-						· Menge <span th:text="${item.quantity}">1</span>
+						· Menge <span th:text="${item.quantityLabel}">1</span>
 					</span>
 				</div>
 
@@ -93,25 +106,45 @@
 				<form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
 					<input type="hidden" name="delta" value="-1">
 					<input type="hidden" name="next" th:value="@{/}">
-					<button type="submit" class="button small" title="Eine Einheit verbraucht">Verbraucht</button>
+					<button type="submit" class="button small" th:title="'Verbraucht: ' + ${item.stepLabel}">Verbraucht</button>
 				</form>
+			</li>
+		</ul>
+
+		<form method="post" th:action="@{/notifications/send}" th:if="${notifyEnabled}" style="margin-top:1rem">
+			<button type="submit" class="button small" title="Schickt die Ablauf-Übersicht jetzt per ntfy aufs Handy">Jetzt benachrichtigen</button>
+		</form>
+	</section>
+
+	<!-- Was kann ich kochen? Rezepte, bei denen höchstens eine Zutat fehlt, bald Ablaufendes zuerst -->
+	<section class="panel" th:if="${authenticated}">
+		<div class="panel-header">
+			<h2>Was kann ich kochen?</h2>
+			<a th:href="@{/recipes}" class="text-link">Alle Rezepte</a>
+		</div>
+
+		<div th:if="${#lists.isEmpty(cookSuggestions)}" class="empty-state">
+			<strong>Gerade kein passendes Rezept.</strong>
+			<p>Hier erscheinen Rezepte, für die höchstens eine Zutat fehlt.</p>
+		</div>
+
+		<ul class="list-rows" th:if="${!#lists.isEmpty(cookSuggestions)}">
+			<li class="list-row" th:each="v : ${cookSuggestions}">
+				<div class="row-main">
+					<a class="row-title" th:href="@{/recipes/{id}(id=${v.recipe.id})}" th:text="${v.recipe.title}">Rezept</a>
+					<span class="row-sub">
+						<span th:if="${v.complete}">Alles da</span>
+						<span th:if="${!v.complete}" th:text="'Es fehlt: ' + ${v.missing[0]}">Es fehlt: Mehl</span>
+						<span th:if="${v.expiringCount > 0}"
+							  th:text="' · verbraucht ' + ${#strings.listJoin(v.expiringItems, ', ')}"> · verbraucht Milch</span>
+					</span>
+				</div>
+				<span class="badge warning" th:if="${v.expiringCount > 0}">Bald ablaufend</span>
+				<span class="badge ok" th:if="${v.expiringCount == 0 and v.complete}">Kochbar</span>
 			</li>
 		</ul>
 	</section>
 
-	<!-- Was ist Foodmanager? -->
-	<section class="panel about">
-		<h2>Was ist Foodmanager?</h2>
-		<p class="lead">
-			Foodmanager ist dein digitaler Haushaltsassistent: Er zeigt dir, was du zu Hause hast,
-			wo es liegt und wie lange es noch haltbar ist.
-		</p>
-		<p>
-			Lebensmittel und Gegenstände erfasst du in Sekunden per Barcode-Scan, ordnest sie Kategorien
-			und Lagerorten zu und siehst auf einen Blick, was bald abläuft, nachgekauft werden muss oder
-			defekt ist. So wirfst du weniger weg, kaufst nichts doppelt und musst nie mehr suchen.
-		</p>
-	</section>
 
 	<!-- Weitere Funktionen -->
 	<section class="panel">
@@ -129,7 +162,7 @@
 					</svg>
 				</span>
 				<h3>Rezepte</h3>
-				<p>Rezepte sammeln und mit dem kochen, was da ist.</p>
+				<p>Sieh, welche Rezepte du mit deinem Vorrat kochen kannst.</p>
 				<span class="tile-go">Öffnen →</span>
 			</a>
 
@@ -158,17 +191,19 @@
 				<span class="tile-go">Öffnen →</span>
 			</a>
 
-			<div class="tile is-placeholder" aria-disabled="true">
+			<a th:href="@{/labels}" class="tile">
 				<span class="tile-icon" aria-hidden="true">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-						<line x1="12" y1="5" x2="12" y2="19"/>
-						<line x1="5" y1="12" x2="19" y2="12"/>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="7" height="7"/>
+						<rect x="14" y="3" width="7" height="7"/>
+						<rect x="14" y="14" width="7" height="7"/>
+						<rect x="3" y="14" width="7" height="7"/>
 					</svg>
 				</span>
-				<h3>Platzhalter</h3>
-				<p>Hier kommt bald eine weitere Funktion.</p>
-				<span class="tile-badge">Bald verfügbar</span>
-			</div>
+				<h3>QR-Etiketten</h3>
+				<p>Codes für Kisten und Regale zum Ausdrucken. Scannen zeigt den Inhalt.</p>
+				<span class="tile-go">Öffnen →</span>
+			</a>
 
 		</div>
 	</section>

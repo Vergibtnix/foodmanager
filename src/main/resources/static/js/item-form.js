@@ -10,8 +10,8 @@
 
     // ---------- Kategorie bestimmt, welche Zusatzfelder erscheinen ----------
     const FOOD = ['expiry'];
-    const DURABLE = ['purchase', 'warranty', 'condition'];
-    const ALL = ['expiry', 'purchase', 'warranty', 'condition'];
+    const DURABLE = ['purchase', 'condition'];
+    const ALL = ['expiry', 'purchase', 'condition'];
     const GROUPS = {
         'lebensmittel': FOOD,
         'getränk': FOOD,
@@ -89,6 +89,12 @@
 
     form.querySelectorAll('.picker').forEach(setupPicker);
 
+    // Fehlermeldung verschwindet, sobald ein Lagerort gewählt ist
+    form.querySelectorAll('.fixed-choice').forEach(group => group.addEventListener('change', () => {
+        const error = group.parentElement.querySelector('.js-error');
+        if (error) error.hidden = true;
+    }));
+
     category.addEventListener('input', updateConditional);
     conds.forEach(el => el.addEventListener('input', updateConditional));
     updateConditional();
@@ -97,11 +103,15 @@
     const quantity = $('quantity');
     if (quantity && quantity.value === '') quantity.value = '1';
 
-    form.querySelectorAll('[data-step]').forEach(btn => btn.addEventListener('click', () => {
+    // Schrittweite je Einheit: 1 Stück, 100 g, 100 ml
+    const unit = $('unit');
+    const unitStep = () => Number(unit?.selectedOptions[0]?.dataset.step || 1);
+
+    form.querySelectorAll('button[data-step]').forEach(btn => btn.addEventListener('click', () => {
         const target = $(btn.dataset.target);
         const min = Number(target.min || 0);
         const current = parseInt(target.value, 10) || 0;
-        target.value = String(Math.max(min, current + Number(btn.dataset.step)));
+        target.value = String(Math.max(min, current + Number(btn.dataset.step) * unitStep()));
     }));
 
     // ---------- Ablaufdatum: Schnellauswahl ----------
@@ -198,6 +208,14 @@
             const error = picker.parentElement.querySelector('.js-error');
             if (error) error.hidden = !empty;
             if (empty && !firstInvalid) firstInvalid = picker;
+        });
+
+        // Feste Auswahl (Lagerort): eine Option muss angeklickt sein
+        form.querySelectorAll('.fixed-choice').forEach(group => {
+            const empty = !group.querySelector('input:checked');
+            const error = group.parentElement.querySelector('.js-error');
+            if (error) error.hidden = !empty;
+            if (empty && !firstInvalid) firstInvalid = group;
         });
 
         if (firstInvalid) {

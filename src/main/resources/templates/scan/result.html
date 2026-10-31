@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#22252b">
     <title>Scan-Ergebnis</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body>
 
@@ -35,13 +35,17 @@
                     <p style="margin:0"><strong>Marke:</strong>
                         <span th:text="${lookup.brand != null and !#strings.isEmpty(lookup.brand) ? lookup.brand : 'Unbekannt'}"></span></p>
                     <p style="margin:0"><strong>Info:</strong> <span th:text="${lookup.message}"></span></p>
+                    <p style="margin:0" th:if="${expiryDate != null}"><strong>Ablaufdatum:</strong>
+                        <span th:text="${#temporals.format(expiryDate, 'dd.MM.yyyy')}">31.12.2026</span> (aus dem Code übernommen)</p>
+                    <p style="margin:0" th:if="${expiryDate == null}"><strong>Ablaufdatum:</strong>
+                        nicht im Code enthalten – bitte beim Anlegen manuell eingeben</p>
                 </div>
 
                 <!-- Schon im Inventar: Menge erhöhen statt doppelt anlegen -->
                 <div class="hint-block" th:if="${existing != null}">
                     <strong>Schon im Inventar:</strong>
                     <a th:href="@{/items/{id}(id=${existing.id})}" th:text="${existing.name}">Name</a>
-                    · Menge <span th:text="${existing.quantity}">1</span>
+                    · Menge <span th:text="${existing.quantityLabel}">1</span>
                     <span th:if="${existing.storageLocation != null}">
 						· <span th:text="${existing.storageLocation}">Lagerort</span>
 					</span>
@@ -51,15 +55,17 @@
                     <form method="post" th:action="@{/items/{id}/adjust(id=${existing.id})}">
                         <input type="hidden" name="delta" value="1">
                         <input type="hidden" name="next" th:value="@{/items}">
+                        <!-- Datum aus dem GS1-Code: neue Ware bekommt eine eigene Charge -->
+                        <input type="hidden" name="expiry" th:if="${expiryDate != null}" th:value="${expiryDate}">
                         <button type="submit" class="button primary large">Menge um 1 erhöhen</button>
                     </form>
-                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl})}"
+                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl}, expiry=${expiryDate})}"
                        class="button large">Trotzdem neu anlegen</a>
                     <a th:href="@{/scan}" class="button large">Erneut scannen</a>
                 </div>
 
                 <div class="button-row" th:if="${existing == null}">
-                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl})}"
+                    <a th:href="@{/items/new(barcode=${lookup.barcode}, name=${lookup.name}, brand=${lookup.brand}, imageUrl=${lookup.imageUrl}, expiry=${expiryDate})}"
                        class="button primary large">Produkt übernehmen</a>
                     <a th:href="@{/scan}" class="button large">Erneut scannen</a>
                 </div>

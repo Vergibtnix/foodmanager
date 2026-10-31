@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#22252b">
+    <title>Noch einzuräumen</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('scan')}"></div>
+
+<main class="container" data-live="pending">
+
+    <div class="page-head page-head-row">
+        <div>
+            <h1>Noch einzuräumen</h1>
+            <p>Beim Serien-Scan erkannte neue Produkte. Lege sie hier nacheinander mit Lagerort und Ablaufdatum an.</p>
+        </div>
+        <div class="button-row">
+            <a th:href="@{/scan}" class="button">Weiter scannen</a>
+        </div>
+    </div>
+
+    <section class="panel">
+        <div th:if="${#lists.isEmpty(pending)}" class="empty-state">
+            <strong>Alles eingeräumt.</strong>
+            <p>Neue Produkte aus dem Serien-Scan erscheinen hier.</p>
+        </div>
+
+        <ul class="list-rows" th:if="${!#lists.isEmpty(pending)}">
+            <li class="list-row" th:each="p : ${pending}">
+                <img th:if="${p.imageUrl != null}" th:src="${p.imageUrl}" alt="" class="table-image" loading="lazy">
+                <div class="row-main">
+                    <span class="row-title" th:text="${p.name ?: 'Unbekanntes Produkt'}">Milch</span>
+                    <span class="row-sub">
+                        <span th:text="${p.brand != null} ? ${p.brand} + ' · ' : ''"></span>
+                        <span th:text="${p.barcode}">4012345678901</span>
+                        <span th:if="${p.count > 1}" th:text="' · ' + ${p.count} + '× gescannt'"></span>
+                        <span th:if="${p.expiryDate != null}"
+                              th:text="' · bis ' + ${#temporals.format(p.expiryDate, 'dd.MM.yyyy')}"></span>
+                    </span>
+                </div>
+                <a class="button small primary"
+                   th:href="@{/items/new(barcode=${p.barcode}, name=${p.name}, brand=${p.brand}, imageUrl=${p.imageUrl}, expiry=${p.expiryDate}, quantity=${p.count}, pending=${p.id})}">Anlegen</a>
+                <form method="post" th:action="@{/scan/inbox/{id}/delete(id=${p.id})}">
+                    <button type="submit" class="qty-btn" aria-label="Verwerfen" title="Verwerfen">✕</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+
+</main>
+
+<script th:src="@{/js/live.js(v=1)}" charset="utf-8"></script>
+
+</body>
+</html>

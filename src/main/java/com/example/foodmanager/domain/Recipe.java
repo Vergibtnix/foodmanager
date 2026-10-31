@@ -27,6 +27,10 @@ public class Recipe {
     @Column(length = 8000)
     private String instructions;
 
+    /** Adresse der Webseite, von der das Rezept importiert wurde (leer bei selbst geschriebenen). */
+    @Column(length = 500)
+    private String sourceUrl;
+
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -40,6 +44,9 @@ public class Recipe {
 
     public String getInstructions() { return instructions; }
     public void setInstructions(String instructions) { this.instructions = instructions; }
+
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

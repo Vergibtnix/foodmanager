@@ -6,7 +6,9 @@
 	<meta name="color-scheme" content="dark">
 	<meta name="theme-color" content="#22252b">
 	<title>Barcode scannen</title>
-	<link rel="stylesheet" th:href="@{/css/app.css}">
+	<meta th:if="${_csrf != null}" name="csrf-header" th:content="${_csrf.headerName}">
+	<meta th:if="${_csrf != null}" name="csrf-token" th:content="${_csrf.token}">
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body>
 
@@ -19,11 +21,27 @@
 		<p>Scanne mit deinem Handy und übertrage das Produkt direkt in den Vorrat.</p>
 	</div>
 
+	<!-- Serien-Scan: zum Einräumen nach dem Einkauf, ein Produkt nach dem anderen -->
+	<section class="panel series-panel">
+		<label class="switch-row" for="series-mode">
+			<input id="series-mode" type="checkbox">
+			<span>
+				<strong>Serien-Scan (Einräumen)</strong>
+				<span class="hint small">Bekannte Produkte bekommen sofort +1, neue kommen auf die Liste „Noch einzuräumen“.
+					Die Kamera scannt einfach weiter.</span>
+			</span>
+		</label>
+		<a th:href="@{/scan/inbox}" class="button" id="inbox-link">
+			Noch einzuräumen <span class="badge" id="inbox-count" th:text="${pendingCount}">0</span>
+		</a>
+		<ol id="series-log" class="series-log" aria-live="polite" hidden></ol>
+	</section>
+
 	<div class="two-column">
 
 		<section class="panel scanner-panel">
 			<h2>Mit Handy-Kamera scannen</h2>
-			<p class="hint">Fotografiere den Barcode. Die Erkennung startet automatisch nach der Aufnahme.</p>
+			<p class="hint photo-hint">Fotografiere den Barcode. Die Erkennung startet automatisch nach der Aufnahme.</p>
 
 			<div class="capture-row">
 				<label class="button primary large" for="barcode-photo">Barcode fotografieren</label>
@@ -39,8 +57,8 @@
 				</div>
 				<canvas id="scanner-canvas" class="hidden"></canvas>
 				<div class="button-row">
-					<button type="button" class="button" id="start-scan">Live-Kamera starten</button>
-					<button type="button" class="button" id="stop-scan">Stoppen</button>
+					<button type="button" class="button" id="start-scan">Kamera starten</button>
+					<button type="button" class="button" id="stop-scan">Kamera stoppen</button>
 				</div>
 			</div>
 
@@ -72,7 +90,7 @@
 	</div>
 </main>
 
-<script th:src="@{/js/scan.js(v=5)}" charset="utf-8"></script>
+<script th:src="@{/js/scan.js(v=7)}" charset="utf-8"></script>
 
 </body>
 </html>

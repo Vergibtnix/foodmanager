@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title th:text="${view.recipe.title}">Rezept</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('recipes')}"></div>
+
+<main class="container">
+
+	<div class="page-head page-head-row">
+		<div>
+			<h1 th:text="${view.recipe.title}">Rezept</h1>
+			<p>
+				<span th:text="${view.have}">0</span> von <span th:text="${view.total}">0</span> Zutaten im Vorrat
+				<span class="badge ok" th:if="${view.complete}">Alles da</span>
+			</p>
+			<p class="hint small" th:if="${view.recipe.sourceUrl != null}">
+				Quelle:
+				<a th:href="${view.recipe.sourceUrl}" target="_blank" rel="noopener noreferrer"
+				   th:text="${sourceHost != null} ? ${sourceHost} : ${view.recipe.sourceUrl}">Webseite</a>
+			</p>
+		</div>
+		<div class="button-row">
+			<a th:href="@{/recipes/{id}/edit(id=${view.recipe.id})}" class="button">Bearbeiten</a>
+			<form method="post" th:action="@{/recipes/{id}/delete(id=${view.recipe.id})}"
+				  onsubmit="return confirm('Dieses Rezept wirklich löschen?');">
+				<button type="submit" class="button danger">Löschen</button>
+			</form>
+		</div>
+	</div>
+
+	<div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+
+	<div class="recipe-layout">
+
+		<section class="panel">
+			<div class="panel-header">
+				<h2>Zutaten</h2>
+			</div>
+
+			<ul class="ingredient-list">
+				<li class="ingredient" th:each="ing : ${view.ingredients}"
+					th:classappend="${ing.available} ? 'have' : 'miss'">
+					<span class="mark" th:text="${ing.available} ? '✓' : '✕'" aria-hidden="true">✓</span>
+					<span>
+						<span th:text="${ing.text}">200 g Mehl</span>
+						<span class="via" th:if="${ing.available}">im Vorrat: <span th:text="${ing.matchedItem}">Mehl</span></span>
+						<span class="badge warning" th:if="${ing.expiring}">läuft bald ab</span>
+						<span class="via" th:if="${!ing.available and ing.note == null}">fehlt</span>
+						<span class="via" th:if="${ing.note != null}" th:text="'zu wenig: ' + ${ing.note}">zu wenig: nur 200 g da</span>
+					</span>
+				</li>
+			</ul>
+
+			<form method="post" th:action="@{/recipes/{id}/to-shopping-list(id=${view.recipe.id})}"
+				  th:if="${!view.complete}" style="margin-top:1rem">
+				<button type="submit" class="button primary">Fehlendes auf die Einkaufsliste</button>
+			</form>
+		</section>
+
+		<section class="panel">
+			<div class="panel-header">
+				<h2>Zubereitung</h2>
+			</div>
+			<p class="instructions" th:if="${view.recipe.instructions != null}" th:text="${view.recipe.instructions}">Schritte</p>
+			<p class="hint" th:if="${view.recipe.instructions == null}">Keine Anleitung hinterlegt.</p>
+		</section>
+
+	</div>
+
+	<div class="button-row" style="margin-top:.5rem">
+		<a th:href="@{/recipes}" class="button">Zurück zu den Rezepten</a>
+	</div>
+
+</main>
+
+</body>
+</html>

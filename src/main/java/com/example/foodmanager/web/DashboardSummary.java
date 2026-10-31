@@ -10,8 +10,6 @@ public class DashboardSummary {
 
 	private long itemsBelowMinQuantity;
 
-	private long itemsWarrantyExpiringSoon;
-
 	private long itemsDefective;
 
 	private List<Item> latestItems;
@@ -19,13 +17,11 @@ public class DashboardSummary {
 	public DashboardSummary(
 			long totalItems,
 			long itemsBelowMinQuantity,
-			long itemsWarrantyExpiringSoon,
 			long itemsDefective,
 			List<Item> latestItems
 	) {
 		this.totalItems = totalItems;
 		this.itemsBelowMinQuantity = itemsBelowMinQuantity;
-		this.itemsWarrantyExpiringSoon = itemsWarrantyExpiringSoon;
 		this.itemsDefective = itemsDefective;
 		this.latestItems = latestItems;
 	}
@@ -36,10 +32,6 @@ public class DashboardSummary {
 
 	public long getItemsBelowMinQuantity() {
 		return itemsBelowMinQuantity;
-	}
-
-	public long getItemsWarrantyExpiringSoon() {
-		return itemsWarrantyExpiringSoon;
 	}
 
 	public long getItemsDefective() {

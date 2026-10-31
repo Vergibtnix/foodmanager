@@ -36,9 +36,10 @@ public class ShoppingListController {
         return "redirect:/shopping-list";
     }
 
+    /** done: gewünschter Zustand (true = abgehakt). */
     @PostMapping("/shopping-list/{id}/toggle")
-    public String toggle(@PathVariable Long id) {
-        shoppingListService.toggle(id);
+    public String toggle(@PathVariable Long id, @RequestParam boolean done) {
+        shoppingListService.setDone(id, done);
         return "redirect:/shopping-list";
     }
 

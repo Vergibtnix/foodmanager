@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Meldungen nach einer Aktion, bei Mengenänderung und Löschen mit "Rückgängig".
+     Aufruf: <div th:replace="~{fragments/flash :: messages('/items')}"></div>
+     next = Seite, auf die man nach "Rückgängig" zurückkommt. -->
+<th:block th:fragment="messages(next)">
+  <div th:if="${successMessage}" class="flash success flash-row" role="status">
+    <span th:text="${successMessage}">Gespeichert.</span>
+    <form th:if="${undoToken}" method="post" th:action="@{/undo}" class="flash-undo">
+      <input type="hidden" name="token" th:value="${undoToken}">
+      <input type="hidden" name="next" th:value="${next}">
+      <button type="submit" class="button small">Rückgängig</button>
+    </form>
+  </div>
+  <div th:if="${infoMessage}" class="flash info" role="status" th:text="${infoMessage}"></div>
+</th:block>
+
+</body>
+</html>

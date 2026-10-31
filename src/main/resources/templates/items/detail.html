@@ -6,7 +6,7 @@
 	<meta name="color-scheme" content="dark">
 	<meta name="theme-color" content="#22252b">
 	<title th:text="${item.name}">Item</title>
-	<link rel="stylesheet" th:href="@{/css/app.css}">
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body>
 
@@ -16,13 +16,20 @@
 
 	<div class="page-head">
 		<h1 th:text="${item.name}">Item</h1>
-		<p>Detailansicht eines erfassten Gegenstands</p>
+		<p class="dot-list">
+			<span th:if="${item.brand != null}" th:text="${item.brand}">Marke</span>
+			<span th:if="${item.category != null}" th:text="${item.category}">Kategorie</span>
+			<span th:if="${item.storageLocation != null}" th:text="${item.storageLocation}">Lagerort</span>
+		</p>
 	</div>
+
+	<div th:replace="~{fragments/flash :: messages(@{/items/{id}(id=${item.id})})}"></div>
 
 	<div class="detail-layout">
 
-		<!-- Bild -->
-		<section class="panel image-panel">
+		<!-- Bild (am Handy ohne Bild ausgeblendet) -->
+		<section class="panel image-panel"
+				 th:classappend="${item.displayImageUrl == null || item.displayImageUrl.isBlank()} ? 'no-image'">
 			<img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}"
 				 th:src="${item.displayImageUrl}" alt="Item-Bild" class="detail-image">
 
@@ -33,43 +40,101 @@
 		<!-- Details -->
 		<section class="panel stack">
 			<div class="detail-grid">
-				<div><strong>Name</strong><span th:text="${item.name}"></span></div>
-				<div><strong>Marke</strong><span th:text="${item.brand ?: '-'}"></span></div>
-				<div><strong>Kategorie</strong><span th:text="${item.category ?: '-'}"></span></div>
-				<div><strong>Barcode</strong><span th:text="${item.barcode ?: '-'}"></span></div>
-				<div><strong>Lagerort</strong><span th:text="${item.storageLocation ?: '-'}"></span></div>
-				<div><strong>Menge</strong><span th:text="${item.quantity}"></span></div>
-				<div><strong>Zustand</strong><span th:text="${item.condition ?: '-'}"></span></div>
-				<div><strong>Kaufdatum</strong>
-					<span th:text="${item.purchaseDate != null ? #temporals.format(item.purchaseDate, 'dd.MM.yyyy') : '-'}"></span></div>
-				<div><strong>Garantie bis</strong>
-					<span th:text="${item.warrantyUntil != null ? #temporals.format(item.warrantyUntil, 'dd.MM.yyyy') : '-'}"></span></div>
-				<div><strong>Mindestbestand</strong>
-					<span th:text="${item.minQuantity != null ? item.minQuantity : '-'}"></span></div>
-				<div><strong>Ablaufdatum</strong>
-					<span th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'dd.MM.yyyy') : '-'}"></span></div>
-
-				<div class="full-width">
-					<strong>Status</strong>
-					<span th:if="${item.expiryDate == null}">Kein Ablaufdatum</span>
-					<span th:if="${item.expiryDate != null && item.expired}" class="badge danger">Abgelaufen</span>
-					<span th:if="${item.expiryDate != null && !item.expired && item.expiringSoon}" class="badge warning">Läuft bald ab</span>
-					<span th:if="${item.expiryDate != null && !item.expired && !item.expiringSoon}">Alles okay</span>
+				<!-- Nur ausgefüllte Angaben zeigen, leere Felder machen die Seite am Handy nur länger -->
+				<div><strong>Menge</strong>
+					<div class="qty-control">
+						<form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
+							<input type="hidden" name="delta" value="-1">
+							<input type="hidden" name="next" th:value="@{/items/{id}(id=${item.id})}">
+							<button type="submit" class="qty-btn" th:aria-label="'Verbraucht: ' + ${item.stepLabel}">−</button>
+						</form>
+						<span class="qty-value" th:text="${item.quantityLabel}">1</span>
+						<form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
+							<input type="hidden" name="delta" value="1">
+							<input type="hidden" name="next" th:value="@{/items/{id}(id=${item.id})}">
+							<button type="submit" class="qty-btn" th:aria-label="'Dazu: ' + ${item.stepLabel}">+</button>
+						</form>
+					</div>
 				</div>
+				<div th:if="${item.expiryDate != null}"><strong>Ablaufdatum</strong>
+					<span>
+						<span th:text="${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}">01.11.2026</span>
+						<span th:if="${item.expired}" class="badge danger">Abgelaufen</span>
+						<span th:if="${!item.expired && item.expiringSoon}" class="badge warning">Läuft bald ab</span>
+					</span>
+				</div>
+				<div th:if="${item.minQuantityLabel != null}"><strong>Mindestbestand</strong>
+					<span th:text="${item.minQuantityLabel}"></span></div>
+				<div th:if="${item.condition != null}"><strong>Zustand</strong><span th:text="${item.condition}"></span></div>
+				<div th:if="${item.purchaseDate != null}"><strong>Kaufdatum</strong>
+					<span th:text="${#temporals.format(item.purchaseDate, 'dd.MM.yyyy')}"></span></div>
+				<div th:if="${item.barcode != null}"><strong>Barcode</strong><span th:text="${item.barcode}"></span></div>
 
-				<div class="full-width">
+				<div class="full-width" th:if="${item.notes != null}">
 					<strong>Notizen</strong>
-					<span th:text="${item.notes ?: '-'}"></span>
+					<span th:text="${item.notes}"></span>
 				</div>
 			</div>
 
 			<div class="button-row">
 				<a th:href="@{/items/{id}/edit(id=${item.id})}" class="button primary">Bearbeiten</a>
-				<a th:href="@{/items}" class="button">Zurück zum Inventar</a>
+				<a th:href="@{/items}" class="button">Zum Inventar</a>
+				<!-- Kein Bestätigungsdialog nötig: danach gibt es "Rückgängig" -->
+				<form method="post" th:action="@{/items/{id}/delete(id=${item.id})}">
+					<button type="submit" class="button danger">Löschen</button>
+				</form>
 			</div>
 		</section>
 
 	</div>
+
+	<!-- Bestand nach Ablaufdatum (Chargen). Verbraucht wird automatisch zuerst, was am frühesten abläuft. -->
+	<section class="panel stack" th:with="batchList=${item.batches}">
+		<div class="panel-header">
+			<h2>Bestand nach Ablaufdatum</h2>
+			<span class="badge" th:if="${!#lists.isEmpty(batchList)}" th:text="${#lists.size(batchList)} + ' Chargen'">2 Chargen</span>
+		</div>
+
+		<p class="hint" th:if="${#lists.isEmpty(batchList)}">
+			Alles hat dasselbe Ablaufdatum<span th:if="${item.expiryDate != null}"
+				th:text="' (' + ${#temporals.format(item.expiryDate, 'dd.MM.yyyy')} + ')'"></span>.
+			Kaufst du mit einem anderen Datum nach, werden die Mengen hier getrennt aufgelistet.
+		</p>
+
+		<ul class="list-rows" th:if="${!#lists.isEmpty(batchList)}">
+			<li class="list-row" th:each="batch : ${batchList}"
+				th:classappend="${batch.expired} ? 'is-expired' : (${batch.expiringSoon} ? 'is-soon')">
+				<div class="row-main">
+					<span class="row-title" th:text="${batch.quantityLabel}">2 Stk.</span>
+					<span class="row-sub" th:text="${batch.expiryDate != null} ? 'bis ' + ${#temporals.format(batch.expiryDate, 'dd.MM.yyyy')} : 'ohne Ablaufdatum'">bis 03.11.2026</span>
+				</div>
+				<span class="badge danger" th:if="${batch.expired}">Abgelaufen</span>
+				<span class="badge warning" th:if="${batch.expiringSoon}">Bald</span>
+				<form method="post" th:action="@{/items/{id}/batches/{b}/consume(id=${item.id}, b=${batch.id})}">
+					<input type="hidden" name="steps" value="1">
+					<button type="submit" class="button small" th:title="'Verbraucht: ' + ${item.stepLabel}">−&nbsp;<span th:text="${item.stepLabel}">1 Stk.</span></button>
+				</form>
+				<form method="post" th:action="@{/items/{id}/batches/{b}/consume(id=${item.id}, b=${batch.id})}">
+					<input type="hidden" name="steps" value="0">
+					<button type="submit" class="qty-btn" aria-label="Ganze Charge entfernen" title="Ganze Charge entfernen (z. B. weggeworfen)">✕</button>
+				</form>
+			</li>
+		</ul>
+
+		<!-- Nachkaufen mit eigenem Ablaufdatum -->
+		<form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}" class="restock-form">
+			<input type="hidden" name="next" th:value="@{/items/{id}(id=${item.id})}">
+			<div class="field">
+				<label for="restock-delta" th:text="'Nachkaufen (Anzahl × ' + ${item.stepLabel} + ')'">Nachkaufen</label>
+				<input id="restock-delta" type="number" name="delta" min="1" max="100" value="1" inputmode="numeric">
+			</div>
+			<div class="field">
+				<label for="restock-expiry">Ablaufdatum der neuen Ware</label>
+				<input id="restock-expiry" type="date" name="expiry">
+			</div>
+			<button type="submit" class="button primary">Hinzufügen</button>
+		</form>
+	</section>
 
 </main>
 

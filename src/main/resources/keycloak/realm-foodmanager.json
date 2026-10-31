@@ -9,38 +9,23 @@
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
-      "secret": "foodmanager-web-secret",
+      "secret": "${KEYCLOAK_CLIENT_SECRET:foodmanager-web-secret}",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8085/login/oauth2/code/keycloak"
+        "http://localhost:8085/login/oauth2/code/keycloak",
+        "https://${TS_HOST:localhost}/login/oauth2/code/keycloak"
       ],
       "webOrigins": [
-        "http://localhost:8085"
+        "http://localhost:8085",
+        "https://${TS_HOST:localhost}"
       ],
       "baseUrl": "http://localhost:8085",
       "rootUrl": "http://localhost:8085",
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:8085/*"
+        "post.logout.redirect.uris": "http://localhost:8085/*##https://${TS_HOST:localhost}/*"
       }
-    }
-  ],
-  "users": [
-    {
-      "username": "demo",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Demo",
-      "lastName": "User",
-      "email": "demo@example.local",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo1234",
-          "temporary": false
-        }
-      ]
     }
   ]
 }

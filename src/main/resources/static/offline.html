@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#22252b">
+  <title>Offline – Foodmanager</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      background: #111318;
+      color: #e7e9ee;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      padding: 1.75rem;
+      border: 1px solid #2d323c;
+      border-radius: 16px;
+      background: #1a1d24;
+      text-align: center;
+    }
+    h1 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+    p { margin: 0 0 1.25rem; color: #9aa2b1; }
+    .actions { display: grid; gap: 0.75rem; }
+    a, button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 48px;
+      padding: 0.6rem 1rem;
+      border: 1px solid #2d323c;
+      border-radius: 10px;
+      background: #21252d;
+      color: #e7e9ee;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .primary { background: #0a7f99; border-color: #0a7f99; color: #fff; }
+  </style>
+</head>
+<body>
+<main>
+  <h1 id="title">Du bist offline</h1>
+  <p id="text">Foodmanager braucht die Verbindung zu deinem Pi. Prüfe, ob Tailscale auf dem Handy eingeschaltet ist.</p>
+  <script>
+    // Internet ist da, nur der Pi antwortet nicht: meist ist Tailscale aus oder der Pi läuft nicht
+    if (navigator.onLine) {
+      document.getElementById('title').textContent = 'Foodmanager nicht erreichbar';
+      document.getElementById('text').textContent = 'Internet ist da, aber der Pi antwortet nicht. '
+        + 'Öffne die Tailscale-App, schalte sie ein und prüfe, dass kein anderes VPN aktiv ist. '
+        + 'Hilft das nicht, läuft der Pi eventuell gerade nicht.';
+    }
+  </script>
+  <div class="actions">
+    <a class="primary" href="/shopping-list">Einkaufsliste ansehen (zuletzt gespeichert)</a>
+    <button type="button" onclick="location.reload()">Erneut versuchen</button>
+  </div>
+</main>
+</body>
+</html>

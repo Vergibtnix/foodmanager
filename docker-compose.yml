@@ -1,14 +1,14 @@
+# Foodmanager auf dem Pi, erreichbar über Tailscale (HTTPS).
+# In der .env muss TS_HOST gesetzt sein, zum Beispiel: TS_HOST=foodmanager.tail1234.ts.net
 services:
   foodmanager-db:
     image: postgres:16-alpine
     container_name: foodmanager-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${FOODMANAGER_DB_NAME:-foodmanager}
-      POSTGRES_USER: ${FOODMANAGER_DB_USER:-foodmanager}
-      POSTGRES_PASSWORD: ${FOODMANAGER_DB_PASSWORD:-foodmanager}
-    ports:
-      - "${FOODMANAGER_DB_PORT:-5432}:5432"
+      POSTGRES_DB: foodmanager
+      POSTGRES_USER: foodmanager
+      POSTGRES_PASSWORD: ${FOODMANAGER_DB_PASSWORD}
     volumes:
       - foodmanager-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -24,17 +24,75 @@ services:
     command: ["start-dev", "--import-realm"]
     restart: unless-stopped
     environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HTTP_PORT: 8080
+      KC_HTTP_ENABLED: "true"
+      # Öffentliche Adresse, wie sie der Browser sieht (Tailscale macht daraus HTTPS auf Port 8443)
+      KC_HOSTNAME: https://${TS_HOST:?TS_HOST fehlt in der .env}:8443
+      KC_PROXY_HEADERS: xforwarded
+      # Werden in realm-foodmanager.json eingesetzt (Redirect-Adressen und Client-Secret)
+      TS_HOST: ${TS_HOST}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
     ports:
-      - "${KEYCLOAK_PORT:-8081}:8080"
+      - "8081:8080"
     volumes:
+      # Der Realm wird nur beim allerersten Start importiert (solange es ihn in keycloak-data noch nicht gibt)
       - ./src/main/resources/keycloak:/opt/keycloak/data/import:ro
+      - keycloak-data:/opt/keycloak/data/h2
+
+  app:
+    build: .
+    container_name: foodmanager-app
+    restart: unless-stopped
     depends_on:
       foodmanager-db:
         condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://foodmanager-db:5432/foodmanager
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: foodmanager
+      SPRING_DATASOURCE_PASSWORD: ${FOODMANAGER_DB_PASSWORD}
+      # Adresse der App, wie sie der Browser sieht
+      PUBLIC_URL: https://${TS_HOST}
+      # Keycloak: der Browser nutzt die öffentliche Adresse, die App spricht intern mit Keycloak
+      KEYCLOAK_PUBLIC_URL: https://${TS_HOST}:8443/realms/foodmanager
+      KEYCLOAK_INTERNAL_URL: http://foodmanager-keycloak:8080/realms/foodmanager
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      # Tägliche Ablauf-Benachrichtigung per ntfy (leer = aus)
+      FOODMANAGER_NTFY_TOPIC: ${FOODMANAGER_NTFY_TOPIC:-}
+      FOODMANAGER_NTFY_SERVER: ${FOODMANAGER_NTFY_SERVER:-https://ntfy.sh}
+      FOODMANAGER_NTFY_TOKEN: ${FOODMANAGER_NTFY_TOKEN:-}
+      TZ: Europe/Vienna
+    volumes:
+      - ./data:/app/data
+
+  # Tägliches Backup von Datenbank, Bildern und Keycloak-Benutzern nach ./backups (siehe scripts/backup.sh)
+  backup:
+    image: postgres:16-alpine
+    container_name: foodmanager-backup
+    restart: unless-stopped
+    depends_on:
+      foodmanager-db:
+        condition: service_healthy
+    entrypoint: ["sh", "/backup.sh"]
+    environment:
+      PGHOST: foodmanager-db
+      PGUSER: foodmanager
+      PGDATABASE: foodmanager
+      PGPASSWORD: ${FOODMANAGER_DB_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: Europe/Vienna
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - ./data:/data:ro
+      - keycloak-data:/keycloak:ro
 
 volumes:
   foodmanager-postgres-data:
-
+  keycloak-data:

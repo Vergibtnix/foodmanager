@@ -6,7 +6,7 @@
 	<meta name="color-scheme" content="dark">
 	<meta name="theme-color" content="#22252b">
 	<title th:text="${pageTitle}">Item</title>
-	<link rel="stylesheet" th:href="@{/css/app.css}">
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body>
 
@@ -19,9 +19,13 @@
 		<p>Nur die Angaben, die zum Gegenstand passen. Den Rest blendet das Formular aus.</p>
 	</div>
 
+	<div th:if="${conflictMessage}" class="flash info" role="alert" th:text="${conflictMessage}"></div>
+
 	<form id="item-form" class="item-form" th:action="${formAction}" th:object="${itemForm}"
 		  method="post" enctype="multipart/form-data" novalidate>
 		<input type="hidden" th:field="*{externalImageUrl}">
+		<input type="hidden" th:field="*{version}">
+		<input type="hidden" th:field="*{pendingScanId}">
 
 		<div class="item-form-layout">
 
@@ -75,33 +79,28 @@
 						<p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
 					</div>
 
-					<div class="field">
-						<label for="storageLocation">Lagerort *</label>
-						<div class="picker" data-input="storageLocation">
-							<div class="chips" role="group" aria-label="Lagerort wählen">
-								<button type="button" class="chip" data-value="Eiskasten">Eiskasten</button>
-								<button type="button" class="chip" data-value="Tiefkühler (Groß)">Tiefkühler (Groß)</button>
-								<button type="button" class="chip" data-value="Tiefkühler (Klein)">Tiefkühler (Klein)</button>
-								<button type="button" class="chip" data-value="Keller">Keller</button>
-								<button type="button" class="chip" data-value="Abstellraum">Abstellraum</button>
-								<button type="button" class="chip" data-value="Medizinkasten">Medizinkasten</button>
-								<button type="button" class="chip" data-value="Veranda">Veranda</button>
-								<button type="button" class="chip" data-value="Klo">Klo</button>
-								<button type="button" class="chip" data-value="Badezimmer">Badezimmer</button>
-								<button type="button" class="chip chip-other" data-other>Anderer …</button>
-							</div>
-							<div class="picker-custom">
-								<input id="storageLocation" type="text" th:field="*{storageLocation}" placeholder="Eigener Lagerort" autocomplete="off">
-							</div>
+					<!-- Feste Lagerorte als Auswahlknöpfe, funktioniert auch ohne JavaScript -->
+					<fieldset class="field plain-fieldset">
+						<legend>Lagerort *</legend>
+						<div class="chips fixed-choice" role="radiogroup" aria-label="Lagerort wählen">
+							<label class="chip radio-chip" th:each="loc : ${storageLocations}">
+								<input type="radio" th:field="*{storageLocation}" th:value="${loc}" required>
+								<span th:text="${loc}">Keller</span>
+							</label>
 						</div>
-						<p class="field-error js-error" hidden>Bitte einen Lagerort wählen oder eingeben.</p>
+						<p class="field-error js-error" hidden>Bitte einen Lagerort wählen.</p>
 						<p class="field-error" th:if="${#fields.hasErrors('storageLocation')}" th:errors="*{storageLocation}"></p>
-					</div>
+					</fieldset>
 				</section>
 
 				<!-- 3. Bestand -->
 				<section class="panel form-section">
 					<h2>Bestand</h2>
+					<p class="hint-block" th:if="${item != null and item.hasBatches()}">
+						Dieses Produkt hat mehrere Ablaufdaten
+						(<a th:href="@{/items/{id}(id=${item.id})}">Details</a>).
+						Änderst du hier Menge oder Ablaufdatum, wird alles zu einem Bestand mit einem Datum zusammengefasst.
+					</p>
 					<div class="field-row">
 						<div class="field">
 							<label for="quantity">Menge</label>
@@ -111,6 +110,17 @@
 								<button type="button" class="stepper-btn" data-step="1" data-target="quantity" aria-label="Menge erhöhen">+</button>
 							</div>
 							<p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+						</div>
+
+						<div class="field">
+							<label for="unit">Einheit</label>
+							<!-- data-step: Schrittweite der Plus/Minus-Knöpfe (item-form.js) -->
+							<select id="unit" th:field="*{unit}">
+								<option th:each="u : ${T(com.example.foodmanager.domain.QuantityUnit).values()}"
+										th:value="${u}" th:text="${u.label} + ' (' + ${u.symbol} + ')'"
+										th:data-step="${u.step}">Stück</option>
+							</select>
+							<p class="hint small">Mindestbestand gilt in derselben Einheit.</p>
 						</div>
 
 						<div class="field">
@@ -125,7 +135,7 @@
 				<!-- 4. Details: erscheinen passend zur Kategorie -->
 				<section class="panel form-section">
 					<h2>Details</h2>
-					<p id="cond-hint" class="hint" hidden>Wähle eine Kategorie, dann erscheinen die passenden Felder (zum Beispiel Ablaufdatum oder Garantie).</p>
+					<p id="cond-hint" class="hint" hidden>Wähle eine Kategorie, dann erscheinen die passenden Felder (zum Beispiel Ablaufdatum oder Kaufdatum).</p>
 
 					<div class="field-row">
 						<div class="field cond" data-group="expiry">
@@ -137,6 +147,13 @@
 								<button type="button" class="chip small" data-add="6:m">+6 Monate</button>
 								<button type="button" class="chip small" data-add="1:y">+1 Jahr</button>
 							</div>
+							<!-- Datum von der Verpackung abfotografieren (Texterkennung im Browser, expiry-ocr.js) -->
+							<div class="ocr-row" hidden>
+								<label class="button small" for="expiry-photo">📷 Datum vom Foto lesen</label>
+								<input id="expiry-photo" class="visually-hidden" type="file" accept="image/*" capture="environment">
+								<p class="hint small ocr-status" role="status" aria-live="polite"></p>
+								<div class="chips ocr-choices"></div>
+							</div>
 							<p class="field-error" th:if="${#fields.hasErrors('expiryDate')}" th:errors="*{expiryDate}"></p>
 						</div>
 
@@ -144,12 +161,6 @@
 							<label for="purchaseDate">Kaufdatum</label>
 							<input id="purchaseDate" type="date" th:field="*{purchaseDate}">
 							<p class="field-error" th:if="${#fields.hasErrors('purchaseDate')}" th:errors="*{purchaseDate}"></p>
-						</div>
-
-						<div class="field cond" data-group="warranty">
-							<label for="warrantyUntil">Garantie bis</label>
-							<input id="warrantyUntil" type="date" th:field="*{warrantyUntil}">
-							<p class="field-error" th:if="${#fields.hasErrors('warrantyUntil')}" th:errors="*{warrantyUntil}"></p>
 						</div>
 
 						<div class="field cond" data-group="condition">
@@ -209,6 +220,7 @@
 </main>
 
 <script th:src="@{/js/item-form.js(v=1)}" charset="utf-8"></script>
+<script th:src="@{/js/expiry-ocr.js(v=1)}" charset="utf-8"></script>
 
 </body>
 </html>

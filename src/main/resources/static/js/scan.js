@@ -31,11 +31,112 @@
 
 	const sanitizeBarcode = value => (value || '').replace(/[^0-9]/g, '').trim();
 
-	function goToResult(barcode) {
+	// QR-Etikett eines Lagerorts? Dann direkt den Inhalt zeigen, immer auf der aktuellen Adresse der App.
+	function locationLink(raw) {
+		try {
+			const url = new URL(raw || '', window.location.origin);
+			const name = url.searchParams.get('name');
+			return url.pathname.endsWith('/locations') && name ? '/locations?name=' + encodeURIComponent(name) : null;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function goToLocation(link) {
 		finished = true;
 		stopCamera();
-		setStatus('Barcode erkannt: ' + barcode, 'ok');
-		window.location.href = '/scan/result?barcode=' + encodeURIComponent(barcode);
+		setStatus('Lagerort erkannt, Inhalt wird geöffnet …', 'ok');
+		window.location.href = link;
+	}
+
+	// Roh-Inhalt weitergeben: GS1-Codes (DataMatrix/QR) enthalten neben der GTIN evtl. das Ablaufdatum,
+	// der Server liest beides aus. Normale Barcodes werden dort wie bisher auf Ziffern reduziert.
+	function goToResult(code) {
+		finished = true;
+		stopCamera();
+		setStatus('Barcode erkannt: ' + sanitizeBarcode(code), 'ok');
+		window.location.href = '/scan/result?barcode=' + encodeURIComponent(code.trim());
+	}
+
+	// ---------- Serien-Scan (Einräumen): weiterscannen statt zur Ergebnisseite ----------
+
+	const seriesToggle = $('series-mode');
+	const seriesLog = $('series-log');
+	const inboxCount = $('inbox-count');
+	const SERIES_KEY = 'foodmanager.seriesMode';
+	const REPEAT_PAUSE_MS = 4000; // derselbe Code zählt erst nach dieser Pause wieder (Kamera sieht ihn mehrfach)
+
+	let lastSeriesCode = '';
+	let lastSeriesTime = 0;
+	let seriesBusy = false;
+
+	const seriesMode = () => !!(seriesToggle && seriesToggle.checked);
+
+	if (seriesToggle) {
+		try { seriesToggle.checked = localStorage.getItem(SERIES_KEY) === '1'; } catch (e) { /* egal */ }
+		seriesToggle.addEventListener('change', () => {
+			try { localStorage.setItem(SERIES_KEY, seriesToggle.checked ? '1' : '0'); } catch (e) { /* egal */ }
+			setStatus(seriesToggle.checked
+				? 'Serien-Scan an: einfach ein Produkt nach dem anderen scannen.'
+				: 'Serien-Scan aus: nach dem Scan öffnet sich das Ergebnis.');
+		});
+	}
+
+	function csrfHeaders() {
+		const header = document.querySelector('meta[name="csrf-header"]');
+		const token = document.querySelector('meta[name="csrf-token"]');
+		return header && token ? { [header.content]: token.content } : {};
+	}
+
+	function logSeries(message, kind) {
+		if (!seriesLog) return;
+		seriesLog.hidden = false;
+		const li = document.createElement('li');
+		li.textContent = message;
+		if (kind) li.className = kind;
+		seriesLog.prepend(li);
+		while (seriesLog.children.length > 8) seriesLog.lastElementChild.remove();
+	}
+
+	async function submitSeries(code) {
+		const clean = code.trim();
+		const now = Date.now();
+		if (seriesBusy || (clean === lastSeriesCode && now - lastSeriesTime < REPEAT_PAUSE_MS)) return;
+		lastSeriesCode = clean;
+		lastSeriesTime = now;
+		seriesBusy = true;
+		setStatus('Wird gebucht …');
+
+		try {
+			const response = await fetch('/scan/series', {
+				method: 'POST',
+				headers: Object.assign({ 'Content-Type': 'application/x-www-form-urlencoded' }, csrfHeaders()),
+				body: new URLSearchParams({ code: clean }),
+				credentials: 'same-origin'
+			});
+			if (!response.ok) throw new Error('HTTP ' + response.status);
+			const result = await response.json();
+			const kind = result.status === 'error' ? 'error' : 'ok';
+			setStatus(result.message, kind);
+			logSeries(result.message, result.status);
+			if (inboxCount && typeof result.pendingCount === 'number') inboxCount.textContent = result.pendingCount;
+			if (navigator.vibrate && kind === 'ok') navigator.vibrate(60);
+		} catch (e) {
+			setStatus('Konnte nicht gebucht werden. Verbindung prüfen und erneut scannen.', 'error');
+			lastSeriesCode = ''; // gleich nochmal erlauben
+		} finally {
+			seriesBusy = false;
+		}
+	}
+
+	/** Erkannter Code: im Serien-Modus buchen und weiterscannen, sonst zur Ergebnisseite. Liefert true, wenn der Scan endet. */
+	function handleCode(code) {
+		if (seriesMode()) {
+			submitSeries(code);
+			return false;
+		}
+		goToResult(code);
+		return true;
 	}
 
 	// ---------- Foto: funktioniert auch ohne HTTPS ----------
@@ -73,11 +174,13 @@
 			if (!response.ok) throw new Error('HTTP ' + response.status);
 
 			const result = await response.json();
-			const barcode = sanitizeBarcode(result.barcode);
-
-			if (result.detected && barcode) {
-				goToResult(barcode);
+			const link = result.detected && locationLink(result.barcode);
+			if (link) {
+				goToLocation(link);
 				return true;
+			}
+			if (result.detected && sanitizeBarcode(result.barcode)) {
+				return handleCode(result.barcode);
 			}
 			if (!silent) {
 				setStatus(result.message || 'Kein Barcode erkannt. Geh näher ran und sorge für gutes Licht.', 'error');
@@ -111,7 +214,7 @@
 		if (!('BarcodeDetector' in window)) return null;
 		try {
 			const supported = await window.BarcodeDetector.getSupportedFormats();
-			const wanted = ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(f => supported.includes(f));
+			const wanted = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code', 'data_matrix', 'code_128'].filter(f => supported.includes(f));
 			return wanted.length ? new window.BarcodeDetector({ formats: wanted }) : null;
 		} catch (e) {
 			return null;
@@ -139,9 +242,13 @@
 			try {
 				if (detector) {
 					const codes = await detector.detect(video);
-					const barcode = sanitizeBarcode(codes[0] && codes[0].rawValue);
-					if (barcode) {
-						goToResult(barcode);
+					const link = codes[0] && locationLink(codes[0].rawValue);
+					if (link) {
+						goToLocation(link);
+						return;
+					}
+					const raw = codes[0] && codes[0].rawValue;
+					if (sanitizeBarcode(raw) && handleCode(raw)) {
 						return;
 					}
 				} else {
@@ -167,6 +274,7 @@
 				audio: false
 			});
 			video.srcObject = stream;
+			liveSection.classList.add('is-live');
 			await video.play();
 			detector = await createDetector();
 			setStatus('Kamera aktiv. Halte den Barcode in den Rahmen, er wird automatisch erkannt.');
@@ -190,10 +298,19 @@
 			video.pause();
 			video.srcObject = null;
 		}
+		if (liveSection) liveSection.classList.remove('is-live');
 	}
 
 	if (liveSupported && liveSection) {
 		liveSection.classList.remove('hidden');
+
+		// Live-Kamera ist der schnellste Weg: nach oben und als Hauptknopf, Foto bleibt als Ausweichweg
+		const panel = liveSection.closest('.scanner-panel');
+		if (panel) panel.classList.add('live-first');
+		if (startButton) startButton.classList.add('primary', 'large');
+		document.querySelectorAll('.capture-row .button.primary').forEach(b => b.classList.remove('primary'));
+		const hint = panel && panel.querySelector('.photo-hint');
+		if (hint) hint.textContent = 'Klappt die Kamera nicht? Dann den Barcode fotografieren:';
 	} else if (insecureHint) {
 		insecureHint.classList.remove('hidden');
 	}
@@ -212,13 +329,19 @@
 	if (lookupForm && barcodeInput) {
 		lookupForm.addEventListener('submit', event => {
 			event.preventDefault();
-			const barcode = sanitizeBarcode(barcodeInput.value);
-
-			if (!barcode) {
+			if (!sanitizeBarcode(barcodeInput.value)) {
 				setStatus('Bitte einen gültigen Barcode scannen oder eingeben.', 'error');
 				return;
 			}
-			goToResult(barcode);
+			if (seriesMode()) {
+				// USB-/Bluetooth-Scanner: Feld leeren und bereit für den nächsten Scan
+				lastSeriesCode = '';
+				submitSeries(barcodeInput.value);
+				barcodeInput.value = '';
+				barcodeInput.focus();
+				return;
+			}
+			goToResult(barcodeInput.value);
 		});
 
 		// Auf dem Handy nicht automatisch fokussieren, sonst springt die Tastatur auf.

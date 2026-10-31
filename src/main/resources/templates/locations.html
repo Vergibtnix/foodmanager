@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#22252b">
   <title th:text="${pageTitle}">Lagerorte</title>
-  <link rel="stylesheet" th:href="@{/css/app.css}">
+  <link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
 </head>
 <body>
 
@@ -17,19 +17,29 @@
   <div class="page-head page-head-row">
     <div>
       <h1 th:text="${pageTitle}">Lagerorte</h1>
-      <p th:if="${selected == null}">Alles nach Lagerort sortiert</p>
-      <p th:if="${selected != null}">Inhalt dieses Lagerorts</p>
+      <p th:if="${selected == null}">Alles nach Lagerort und Kategorie sortiert</p>
+      <p th:if="${selected != null}">Das liegt hier, nach Kategorie sortiert</p>
     </div>
     <div class="button-row">
-      <a th:if="${selected != null}" th:href="@{/locations}" class="button">Alle Lagerorte</a>
+      <a th:if="${selected != null}" th:href="@{/labels(only=${selected})}" class="button">QR-Etikett</a>
+      <a th:if="${selected == null}" th:href="@{/labels}" class="button">QR-Etiketten</a>
     </div>
   </div>
 
-  <div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+  <div th:replace="~{fragments/flash :: messages(${selected != null} ? @{/locations(name=${selected})} : @{/locations})}"></div>
 
-  <div th:if="${#maps.isEmpty(groups)}" class="panel empty-state big">
+  <!-- Schnellauswahl: alle Lagerorte mit Anzahl -->
+  <nav class="chips location-nav" aria-label="Lagerort wählen">
+    <a th:href="@{/locations}" class="chip" th:classappend="${selected == null} ? 'active'">Alle</a>
+    <a th:each="c : ${counts}" th:href="@{/locations(name=${c.key})}" class="chip"
+       th:classappend="${selected != null and #strings.equalsIgnoreCase(c.key, selected)} ? 'active'">
+      <span th:text="${c.key}">Keller</span><span class="count" th:text="${c.value}">0</span>
+    </a>
+  </nav>
+
+  <div th:if="${#lists.isEmpty(views)}" class="panel empty-state big">
     <h2>Hier liegt noch nichts</h2>
-    <p th:if="${selected != null}">Zu „<span th:text="${selected}">Keller</span>“ gibt es noch keine Items.</p>
+    <p th:if="${selected != null}">Im Lagerort „<span th:text="${selected}">Keller</span>“ gibt es noch keine Items.</p>
     <p th:if="${selected == null}">Erfasse dein erstes Item, dann erscheint hier der Lagerort.</p>
     <div class="button-row center">
       <a th:href="@{/scan}" class="button primary">Jetzt scannen</a>
@@ -37,42 +47,66 @@
     </div>
   </div>
 
-  <section class="panel" th:each="entry : ${groups}">
+  <section class="panel location-panel" th:each="view : ${views}">
     <div class="group-head">
-      <h2 th:text="${entry.key}">Keller</h2>
+      <div>
+        <h2 th:text="${view.name}">Keller</h2>
+        <p class="location-summary">
+          <span th:text="${view.count == 1 ? '1 Item' : view.count + ' Items'}">3 Items</span>
+          · <span th:text="${#maps.size(view.categories) == 1 ? '1 Kategorie' : #maps.size(view.categories) + ' Kategorien'}">2 Kategorien</span>
+        </p>
+      </div>
       <div class="button-row">
-        <span class="badge" th:text="${#lists.size(entry.value)} + ' Items'">3 Items</span>
+        <span class="badge danger" th:if="${view.expired > 0}" th:text="${view.expired} + ' abgelaufen'">1 abgelaufen</span>
+        <span class="badge warning" th:if="${view.soon > 0}" th:text="${view.soon} + ' bald'">1 bald</span>
+        <a th:if="${selected == null}" th:href="@{/locations(name=${view.name})}" class="button small">Öffnen</a>
       </div>
     </div>
 
-    <ul class="list-rows">
-      <li class="list-row" th:each="item : ${entry.value}">
-        <div class="row-main">
-          <a class="row-title" th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Name</a>
-          <span class="row-sub">
-						<span th:text="${item.category ?: '-'}">Kategorie</span>
-						<span th:if="${item.brand != null}"> · <span th:text="${item.brand}">Marke</span></span>
-					</span>
-        </div>
+    <div class="category-groups">
+      <div class="category-block" th:each="cat : ${view.categories}">
+        <h3 class="category-title">
+          <span th:text="${cat.key}">Lebensmittel</span>
+          <span class="count" th:text="${#lists.size(cat.value)}">2</span>
+        </h3>
 
-        <span class="badge danger" th:if="${item.expiryDate != null and item.expired}">Abgelaufen</span>
-        <span class="badge warning" th:if="${item.expiryDate != null and !item.expired and item.expiringSoon}">Bald</span>
+        <ul class="list-rows">
+          <li class="list-row" th:each="item : ${cat.value}"
+              th:classappend="${item.expiryDate == null ? '' : (item.expired ? 'is-expired' : (item.expiringSoon ? 'is-soon' : ''))}">
+            <img th:if="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}"
+                 th:src="${item.displayImageUrl}" alt="" class="row-thumb" loading="lazy">
+            <div th:unless="${item.displayImageUrl != null && !item.displayImageUrl.isBlank()}" class="row-thumb placeholder" aria-hidden="true"
+                 th:text="${#strings.substring(item.name, 0, 1)}">A</div>
 
-        <div class="qty-control">
-          <form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
-            <input type="hidden" name="delta" value="-1">
-            <input type="hidden" name="next" th:value="${selected != null} ? @{/locations(name=${selected})} : @{/locations}">
-            <button type="submit" class="qty-btn" aria-label="Eine Einheit verbraucht" title="Verbraucht (−1)">−</button>
-          </form>
-          <span class="qty-value" th:text="${item.quantity}">1</span>
-          <form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
-            <input type="hidden" name="delta" value="1">
-            <input type="hidden" name="next" th:value="${selected != null} ? @{/locations(name=${selected})} : @{/locations}">
-            <button type="submit" class="qty-btn" aria-label="Eine Einheit dazu" title="Dazu (+1)">+</button>
-          </form>
-        </div>
-      </li>
-    </ul>
+            <div class="row-main">
+              <a class="row-title" th:href="@{/items/{id}(id=${item.id})}" th:text="${item.name}">Name</a>
+              <span class="row-sub">
+                <span th:if="${item.brand != null}" th:text="${item.brand}">Marke</span>
+                <span th:if="${item.brand != null and item.expiryDate != null}"> · </span>
+                <span th:if="${item.expiryDate != null}" th:text="'bis ' + ${#temporals.format(item.expiryDate, 'dd.MM.yyyy')}">bis 01.01.2026</span>
+              </span>
+            </div>
+
+            <span class="badge danger" th:if="${item.expiryDate != null and item.expired}">Abgelaufen</span>
+            <span class="badge warning" th:if="${item.expiryDate != null and !item.expired and item.expiringSoon}">Bald</span>
+
+            <div class="qty-control">
+              <form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
+                <input type="hidden" name="delta" value="-1">
+                <input type="hidden" name="next" th:value="${selected != null} ? @{/locations(name=${selected})} : @{/locations}">
+                <button type="submit" class="qty-btn" th:aria-label="'Verbraucht: ' + ${item.stepLabel}" th:title="'Verbraucht (−' + ${item.stepLabel} + ')'">−</button>
+              </form>
+              <span class="qty-value" th:text="${item.quantityLabel}">1</span>
+              <form method="post" th:action="@{/items/{id}/adjust(id=${item.id})}">
+                <input type="hidden" name="delta" value="1">
+                <input type="hidden" name="next" th:value="${selected != null} ? @{/locations(name=${selected})} : @{/locations}">
+                <button type="submit" class="qty-btn" th:aria-label="'Dazu: ' + ${item.stepLabel}" th:title="'Dazu (+' + ${item.stepLabel} + ')'">+</button>
+              </form>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
   </section>
 
 </main>

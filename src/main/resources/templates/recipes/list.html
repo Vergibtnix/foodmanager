@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title>Rezepte</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('recipes')}"></div>
+
+<main class="container">
+
+	<div class="page-head page-head-row">
+		<div>
+			<h1>Rezepte</h1>
+			<p>Was kannst du mit dem kochen, was da ist?</p>
+		</div>
+		<div class="button-row">
+			<a th:href="@{/recipes/new}" class="button primary">Neues Rezept</a>
+		</div>
+	</div>
+
+	<div th:if="${successMessage}" class="flash success" th:text="${successMessage}"></div>
+
+	<div class="chips" role="group" aria-label="Filter" style="margin-bottom:1.25rem">
+		<a th:href="@{/recipes}" class="chip" th:classappend="${!onlyReady} ? 'active'">Alle</a>
+		<a th:href="@{/recipes(onlyReady=true)}" class="chip" th:classappend="${onlyReady} ? 'active'">Nur kochbare</a>
+	</div>
+
+	<div th:if="${#lists.isEmpty(recipes)}" class="panel empty-state big">
+		<h2 th:text="${onlyReady} ? 'Gerade nichts kochbar' : 'Noch keine Rezepte'">Noch keine Rezepte</h2>
+		<p th:if="${!onlyReady}">Lege dein erstes Rezept an. Foodmanager vergleicht die Zutaten mit deinem Vorrat.</p>
+		<p th:if="${onlyReady}">Für kein Rezept sind alle Zutaten da. Zeig alle Rezepte, um zu sehen, was fehlt.</p>
+		<div class="button-row center">
+			<a th:href="@{/recipes/new}" class="button primary">Rezept anlegen</a>
+			<a th:if="${onlyReady}" th:href="@{/recipes}" class="button">Alle Rezepte</a>
+		</div>
+	</div>
+
+	<div class="recipe-grid" th:if="${!#lists.isEmpty(recipes)}">
+		<a class="recipe-card" th:each="v : ${recipes}" th:href="@{/recipes/{id}(id=${v.recipe.id})}">
+			<div class="recipe-head">
+				<h3 th:text="${v.recipe.title}">Rezept</h3>
+				<span class="badge ok" th:if="${v.complete}">Alles da</span>
+			</div>
+
+			<div class="progress" th:classappend="${v.complete} ? 'complete'" role="progressbar"
+				 th:attr="aria-valuenow=${v.percent}, aria-valuemin=0, aria-valuemax=100">
+				<span th:style="'width:' + ${v.percent} + '%'"></span>
+			</div>
+
+			<p class="recipe-meta">
+				<span th:text="${v.have}">0</span> von <span th:text="${v.total}">0</span> Zutaten da
+				<span th:if="${!v.complete}"> · <span th:text="${v.missingCount}">0</span> fehlen</span>
+			</p>
+			<p class="recipe-meta" th:if="${v.expiringCount > 0}">
+				<span class="badge warning">Verbraucht bald Ablaufendes</span>
+				<span th:text="${#strings.listJoin(v.expiringItems, ', ')}">Milch, Joghurt</span>
+			</p>
+		</a>
+	</div>
+
+</main>
+
+</body>
+</html>

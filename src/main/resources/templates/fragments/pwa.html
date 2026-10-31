@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- App-Angaben für den Startbildschirm. Wird in jede Seite im <head> eingebunden:
+     <th:block th:replace="~{fragments/pwa :: tags}"></th:block> -->
+<th:block th:fragment="tags">
+  <link rel="manifest" th:href="@{/manifest.webmanifest}">
+  <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/icon-32.png}">
+  <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Foodmanager">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</th:block>
+
+</body>
+</html>

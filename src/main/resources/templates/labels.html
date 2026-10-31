@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#22252b">
+  <title>QR-Etiketten</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('items')}"></div>
+
+<main class="container">
+
+  <div class="page-head page-head-row no-print">
+    <div>
+      <h1>QR-Etiketten</h1>
+      <p th:if="${only == null}">Ein Code für jeden Lagerort. Mit der Handykamera scannen, dann siehst du, was dort liegt.</p>
+      <p th:if="${only != null}">Etikett für „<span th:text="${only}">Keller</span>“</p>
+    </div>
+    <div class="button-row">
+      <a th:if="${only != null}" th:href="@{/labels}" class="button">Alle Etiketten</a>
+      <button type="button" class="button primary" onclick="window.print()"
+              th:text="${only != null} ? 'Dieses drucken' : 'Alle drucken'">Alle drucken</button>
+    </div>
+  </div>
+
+  <div class="hint-block no-print" style="margin-bottom:1.25rem" th:if="${only == null}">
+    Tipp: Beim Drucken kommen drei Etiketten in jede Reihe. Schneide sie aus und klebe sie an Kasten, Tür oder Regal.
+    Der Code öffnet den Lagerort in der App, nach dem Anmelden siehst du alles, was dort liegt.
+  </div>
+
+  <section class="panel">
+    <div th:if="${#maps.isEmpty(labels)}" class="empty-state big">
+      <h2>Lagerort nicht gefunden</h2>
+      <p>Diesen Lagerort gibt es nicht.</p>
+      <div class="button-row center">
+        <a th:href="@{/labels}" class="button">Alle Etiketten</a>
+      </div>
+    </div>
+
+    <div class="label-grid" th:if="${!#maps.isEmpty(labels)}" th:classappend="${only != null} ? 'single'">
+      <div class="label-card" th:each="entry : ${labels}">
+        <img th:src="@{/labels/qr(location=${entry.key})}" th:alt="'QR-Code für ' + ${entry.key}" width="170" height="170">
+        <strong th:text="${entry.key}">Keller</strong>
+        <span class="label-sub">Scannen zeigt den Inhalt</span>
+
+        <div class="label-actions no-print">
+          <span class="badge" th:text="${entry.value == 1 ? '1 Item' : entry.value + ' Items'}">0 Items</span>
+          <div class="button-row">
+            <a th:href="@{/locations(name=${entry.key})}" class="button small">Inhalt</a>
+            <a th:if="${only == null}" th:href="@{/labels(only=${entry.key})}" class="button small">Nur dieses</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

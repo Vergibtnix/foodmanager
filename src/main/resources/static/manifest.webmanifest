@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "Foodmanager",
+  "short_name": "Foodmanager",
+  "description": "Haushalts-Inventar mit Barcode-Scanner",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111318",
+  "theme_color": "#22252b",
+  "categories": ["food", "lifestyle", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scannen",
+      "short_name": "Scannen",
+      "url": "/scan",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" } ]
+    },
+    {
+      "name": "Einkaufsliste",
+      "short_name": "Einkauf",
+      "url": "/shopping-list",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" } ]
+    },
+    {
+      "name": "Inventar",
+      "short_name": "Inventar",
+      "url": "/items",
+      "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" } ]
+    }
+  ]
+}

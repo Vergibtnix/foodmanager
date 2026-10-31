@@ -1,8 +1,9 @@
 :root {
 	color-scheme: dark;
 	--bg: #111318;
-	--surface: #1a1d24;
-	--surface-2: #21252d;
+	/* halbtransparent, weil auf jeder Seite das Hintergrundbild liegt */
+	--surface: rgba(26, 29, 36, 0.78);
+	--surface-2: rgba(33, 37, 45, 0.72);
 	--nav: #22252b;
 	--border: #2d323c;
 	--text: #e7e9ee;
@@ -10,6 +11,9 @@
 	--primary: #0a7f99;
 	--primary-hover: #0c93b0;
 	--link: #4cc3dc;
+	--surface-hover: #2a2f39;
+	--primary-soft: rgba(10, 127, 153, 0.18);
+	--ring: rgba(76, 195, 220, 0.55);
 	--warning: #fbbf24;
 	--danger: #f87171;
 	--success: #4ade80;
@@ -250,7 +254,7 @@ h1, h2, h3 { line-height: 1.25; }
 	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.button:hover { background: #2a2f39; border-color: #3a404c; }
+.button:hover { background: var(--surface-hover); border-color: #3a404c; }
 
 .button.primary {
 	background: var(--primary);
@@ -279,7 +283,7 @@ h1, h2, h3 { line-height: 1.25; }
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-	outline: 3px solid rgba(76, 195, 220, 0.55);
+	outline: 3px solid var(--ring);
 	outline-offset: 2px;
 }
 
@@ -424,7 +428,7 @@ textarea:focus-visible {
 	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.filter-chip:hover { background: #2a2f39; border-color: #3a404c; }
+.filter-chip:hover { background: var(--surface-hover); border-color: #3a404c; }
 
 .filter-chip.active {
 	background: var(--primary);
@@ -849,8 +853,8 @@ tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
 	}
 }
 
-/* ---------- Startseite mit Hintergrundbild ---------- */
-.home-bg::before {
+/* ---------- Hintergrundbild auf allen Seiten ---------- */
+body::before {
 	content: "";
 	position: fixed;
 	inset: -24px; /* Rand überstehen lassen, damit der Blur keine hellen Kanten zeigt */
@@ -864,9 +868,12 @@ tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
 
 .home-bg .container { padding-top: clamp(1.5rem, 7vh, 4rem); }
 
-.home-bg .hero-card,
-.home-bg .stat-card {
-	background: rgba(26, 29, 36, 0.72);
+/* Karten halbtransparent mit Milchglas, damit das Bild durchscheint */
+.hero-card,
+.stat-card,
+.panel,
+.table-panel,
+.recipe-card {
 	-webkit-backdrop-filter: blur(12px);
 	backdrop-filter: blur(12px);
 }
@@ -923,13 +930,13 @@ tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
 	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.chip:hover { background: #2a2f39; border-color: #3a404c; }
+.chip:hover { background: var(--surface-hover); border-color: #3a404c; }
 .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 .chip-other { border-style: dashed; }
 .chip.small { min-height: 34px; padding: 0.3rem 0.75rem; font-size: 0.85rem; }
 
 .chip:focus-visible,
-.stepper-btn:focus-visible { outline: 3px solid rgba(76, 195, 220, 0.55); outline-offset: 2px; }
+.stepper-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
 .quick-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
 
@@ -957,7 +964,7 @@ tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
 	touch-action: manipulation;
 }
 
-.stepper-btn:hover { background: #2a2f39; }
+.stepper-btn:hover { background: var(--surface-hover); }
 
 /* Notizen */
 details.more { padding: 0; }
@@ -1095,16 +1102,7 @@ a.tile:focus-visible { box-shadow: 0 0 0 3px rgba(76, 195, 220, 0.45); }
 	font-weight: 700;
 }
 
-/* Auf der Startseite wie die anderen Karten halbtransparent */
-.home-bg .panel {
-	background: rgba(26, 29, 36, 0.72);
-	-webkit-backdrop-filter: blur(12px);
-	backdrop-filter: blur(12px);
-}
-
-.home-bg .tile { background: rgba(33, 37, 45, 0.7); }
-.home-bg .tile.is-placeholder { background: transparent; }
-.home-bg a.tile:hover { background: rgba(39, 44, 54, 0.85); }
+a.tile:hover { background: rgba(39, 44, 54, 0.85); }
 
 @media (max-width: 700px) {
 	.feature-tiles { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
@@ -1166,8 +1164,8 @@ a.tile:focus-visible { box-shadow: 0 0 0 3px rgba(76, 195, 220, 0.45); }
 	touch-action: manipulation;
 }
 
-.qty-btn:hover { background: #2a2f39; }
-.qty-btn:focus-visible { outline: 3px solid rgba(76, 195, 220, 0.55); outline-offset: 2px; }
+.qty-btn:hover { background: var(--surface-hover); }
+.qty-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
 /* ---------- Dashboard: als Nächstes fällig ---------- */
 .due-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
@@ -1249,3 +1247,852 @@ a.tile:focus-visible { box-shadow: 0 0 0 3px rgba(76, 195, 220, 0.45); }
 }
 
 .group-head h2 { margin: 0; }
+
+/* =====================================================
+   Rezepte und QR-Etiketten
+   ===================================================== */
+
+/* Mehr Links in der Leiste: auf mittleren Breiten enger setzen */
+@media (min-width: 821px) and (max-width: 1100px) {
+	.navbar-inner { gap: 1rem; }
+	.nav-links a,
+	.nav-link { padding: 0.4rem 0.5rem; font-size: 0.9rem; }
+	.nav-links a.nav-cta { padding: 0.5rem 1rem; margin-left: 0.3rem; }
+}
+
+a.chip { display: inline-flex; align-items: center; text-decoration: none; }
+.badge.ok { background: rgba(74, 222, 128, 0.15); color: #86efac; }
+
+/* ---------- Rezepte ---------- */
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+.recipe-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+	padding: 1.1rem;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	color: var(--text);
+	text-decoration: none;
+	transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+a.recipe-card:hover,
+a.recipe-card:focus-visible { transform: translateY(-2px); border-color: rgba(76, 195, 220, 0.5); outline: none; }
+
+.recipe-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.recipe-head h3 { margin: 0; font-size: 1.1rem; }
+.recipe-meta { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+.progress { height: 8px; border-radius: 999px; background: var(--surface-hover); overflow: hidden; }
+.progress > span { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+.progress.complete > span { background: var(--success); }
+
+.recipe-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	gap: 1.5rem;
+	align-items: start;
+}
+
+.ingredient-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+
+.ingredient {
+	display: flex;
+	gap: 0.65rem;
+	align-items: flex-start;
+	padding: 0.55rem 0.75rem;
+	border-radius: 10px;
+	background: var(--surface-2);
+}
+
+.ingredient .mark { flex: 0 0 auto; font-weight: 800; }
+.ingredient.have .mark { color: var(--success); }
+.ingredient.miss .mark { color: var(--danger); }
+.ingredient .via { display: block; color: var(--muted); font-size: 0.8rem; }
+.instructions { white-space: pre-line; line-height: 1.7; margin: 0; }
+
+@media (max-width: 900px) { .recipe-layout { grid-template-columns: 1fr; } }
+
+/* ---------- QR-Etiketten ---------- */
+.label-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
+
+.label-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 1rem;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: var(--surface-2);
+	text-align: center;
+	break-inside: avoid;
+}
+
+.label-card img { width: 100%; max-width: 170px; height: auto; aspect-ratio: 1; padding: 8px; border-radius: 10px; background: #fff; }
+.label-card strong { font-size: 1.05rem; overflow-wrap: anywhere; }
+
+@media print {
+	.navbar, .no-print { display: none !important; }
+	body { background: #fff; color: #000; padding: 0; }
+	body::before { display: none; }
+	.panel, .label-card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+	.label-card img { max-width: 50mm; }
+	.label-sub { color: #444; }
+	.label-grid.single { grid-template-columns: 1fr; justify-items: center; }
+	.label-grid.single .label-card { width: 90mm; }
+	.label-grid.single .label-card img { max-width: 75mm; }
+	.container { max-width: none; padding: 0; }
+	.panel { background: none; border: none; box-shadow: none; padding: 0; margin: 0; }
+	.label-grid { grid-template-columns: repeat(3, 1fr); gap: 8mm; }
+	.label-card { background: #fff; color: #000; border: 1px solid #000; box-shadow: none; }
+}
+
+/* =====================================================
+   Inventar: Filter mit Anzahl, Sortierung, Tabelle oder Karten
+   ===================================================== */
+.list-controls { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
+.chip .count { margin-left: 0.3rem; opacity: 0.75; font-weight: 700; }
+
+.control-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.control-row select { width: auto; flex: 1 1 200px; max-width: 320px; }
+
+.view-toggle {
+	display: inline-flex;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.view-toggle button {
+	min-height: var(--tap);
+	padding: 0 1rem;
+	border: 0;
+	background: var(--surface-2);
+	color: var(--muted);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.view-toggle button:hover { color: var(--text); }
+.view-toggle button.active { background: var(--primary); color: #fff; }
+.view-toggle button:focus-visible { outline: 3px solid var(--ring); outline-offset: -3px; }
+
+.cell-qty .qty-control { vertical-align: middle; }
+
+/* Statusstreifen: rot abgelaufen, orange bald, grün in Ordnung */
+.items-table:not(.as-cards) tr[data-status="expired"] td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
+.items-table:not(.as-cards) tr[data-status="soon"] td:first-child { box-shadow: inset 4px 0 0 var(--warning); }
+.items-table:not(.as-cards) tr[data-status="ok"] td:first-child { box-shadow: inset 4px 0 0 var(--success); }
+
+/* Kartenansicht, per Schalter auf jeder Bildschirmgröße */
+.items-table.as-cards,
+.items-table.as-cards thead { display: block; }
+.items-table.as-cards thead { display: none; }
+
+.items-table.as-cards tbody {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 1rem;
+}
+
+.items-table.as-cards tr {
+	display: grid;
+	grid-template-columns: 72px 1fr;
+	column-gap: 0.85rem;
+	row-gap: 0.15rem;
+	align-content: start;
+	padding: 0.85rem;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-left-width: 4px;
+	border-radius: 14px;
+	box-shadow: var(--shadow);
+}
+
+.items-table.as-cards tr[data-status="expired"] { border-left-color: var(--danger); }
+.items-table.as-cards tr[data-status="soon"] { border-left-color: var(--warning); }
+.items-table.as-cards tr[data-status="ok"] { border-left-color: var(--success); }
+
+.items-table.as-cards td {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+	min-width: 0;
+	padding: 0.35rem 0;
+	border-bottom: 1px solid var(--border);
+	grid-column: 1 / -1;
+}
+
+.items-table.as-cards tbody tr:hover td { background: none; }
+.items-table.as-cards td::before { content: attr(data-label); color: var(--muted); font-size: 0.85rem; flex: 0 0 auto; }
+.items-table.as-cards td:not([data-label])::before { content: none; }
+
+.items-table.as-cards td.cell-image { grid-column: 1; grid-row: 1 / span 2; padding: 0; border: none; }
+.items-table.as-cards td.cell-name,
+.items-table.as-cards td.cell-category { grid-column: 2; padding: 0; border: none; }
+.items-table.as-cards td.cell-name { font-weight: 700; font-size: 1.05rem; align-self: end; }
+.items-table.as-cards td.cell-category { color: var(--muted); align-self: start; }
+.items-table.as-cards td.cell-actions { padding-top: 0.6rem; border: none; }
+.items-table.as-cards td.cell-actions .button-row { width: 100%; }
+.items-table.as-cards td.cell-actions .button-row > * { flex: 1 1 0; }
+.items-table.as-cards td.cell-actions form { width: 100%; }
+.items-table.as-cards td.hide-mobile { display: none; }
+.items-table.as-cards .table-image { width: 72px; height: 72px; }
+
+/* =====================================================
+   Info-Symbol neben dem Namen
+   ===================================================== */
+.brand-group { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+
+.brand-info { position: relative; display: flex; align-items: center; }
+
+.info-btn {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border: 1.5px solid rgba(255, 255, 255, 0.55);
+	border-radius: 50%;
+	color: #d3d7de;
+	font: italic 700 0.8rem/1 Georgia, "Times New Roman", serif;
+	list-style: none;
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.info-btn::-webkit-details-marker { display: none; }
+
+/* größere Tippfläche, ohne das Symbol zu vergrößern */
+.info-btn::before { content: ""; position: absolute; inset: -10px; }
+
+.info-btn:hover,
+.brand-info[open] .info-btn {
+	color: #fff;
+	border-color: #fff;
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.info-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+
+.info-pop {
+	position: absolute;
+	z-index: 70;
+	top: calc(100% + 16px);
+	left: -0.5rem;
+	width: min(340px, calc(100vw - 2rem));
+	padding: 1rem 1.1rem;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: var(--nav);
+	box-shadow: 0 18px 30px rgba(0, 0, 0, 0.5);
+	color: var(--text);
+}
+
+.info-title { display: block; margin-bottom: 0.5rem; font-size: 1rem; }
+
+.info-pop p { margin: 0 0 0.6rem; color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
+.info-pop p:first-of-type { color: var(--text); }
+.info-pop p:last-child { margin-bottom: 0; }
+
+/* Schmale Bildschirme: Fenster über die ganze Breite unter der Leiste */
+@media (max-width: 600px) {
+	.brand-info { position: static; }
+
+	.info-pop {
+		top: 100%;
+		left: 1rem;
+		right: 1rem;
+		width: auto;
+		margin-top: 0.5rem;
+	}
+}
+
+.offline-banner {
+	padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
+	background: #92400e;
+	color: #fff;
+	font-size: 0.92rem;
+	font-weight: 600;
+	text-align: center;
+}
+
+body[data-offline] .add-form,
+body[data-offline] .list-row form,
+body[data-offline] .panel-header form {
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+/* =====================================================
+   Feinschliff: Logo, Kennzahlen, Buttons, Bewegung
+   ===================================================== */
+::selection { background: rgba(76, 195, 220, 0.35); color: #fff; }
+
+html { scrollbar-color: #3a404c var(--bg); }
+
+/* Logo-Symbol neben dem Namen */
+.brand { display: inline-flex; align-items: center; gap: 0.55rem; }
+
+.brand-mark {
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 9px;
+	background: linear-gradient(135deg, var(--primary-hover), #075e72);
+	color: #fff;
+	box-shadow: 0 4px 12px rgba(10, 127, 153, 0.35);
+}
+
+/* Seitentitel mit kleinem Akzentstrich */
+.page-head h1 { letter-spacing: -0.01em; }
+
+.page-head h1::after {
+	content: "";
+	display: block;
+	width: 42px;
+	height: 3px;
+	margin-top: 0.5rem;
+	border-radius: 3px;
+	background: var(--link);
+}
+
+/* Begrüßung mit leichtem Farbverlauf */
+.hero-card {
+	background:
+		radial-gradient(120% 140% at 0% 0%, rgba(10, 127, 153, 0.22), transparent 55%),
+		var(--surface);
+}
+
+/* Kennzahlen: farbiger Streifen oben, bei 0 zurückgenommen */
+.stat-card {
+	position: relative;
+	overflow: hidden;
+	text-align: left;
+	padding: 1rem 1.1rem;
+}
+
+.stat-card::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto;
+	height: 3px;
+	background: var(--link);
+}
+
+.stat-card.warning::before { background: var(--warning); }
+.stat-card.danger::before { background: var(--danger); }
+.stat-card strong { font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+.stat-card.is-zero::before { opacity: 0.25; }
+.stat-card.is-zero strong { color: var(--muted); }
+
+/* Buttons: kurzes Eindrücken beim Tippen, Hauptbutton mit Tiefe */
+.button,
+.chip,
+.qty-btn,
+.stepper-btn,
+.check-btn { transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease; }
+
+.button:active,
+.chip:active,
+.qty-btn:active,
+.stepper-btn:active,
+.check-btn:active { transform: scale(0.97); }
+
+.button.primary { box-shadow: 0 6px 16px rgba(10, 127, 153, 0.28); }
+.button.primary:hover { box-shadow: 0 8px 20px rgba(10, 127, 153, 0.38); }
+
+.check-btn:hover { border-color: var(--link); }
+
+/* Listenzeilen und Karten reagieren auf Maus */
+.list-row,
+.due-item,
+.label-card { transition: border-color 0.15s ease, background 0.15s ease; }
+
+.list-row:hover,
+.due-item:hover { border-color: #3a404c; }
+
+.ingredient.miss { box-shadow: inset 3px 0 0 rgba(248, 113, 113, 0.6); }
+.ingredient.have { box-shadow: inset 3px 0 0 rgba(74, 222, 128, 0.6); }
+
+@media (max-width: 700px) {
+	.stat-card strong { font-size: 1.6rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	/* Inhalt blendet beim Seitenwechsel sanft ein */
+	main.container { animation: page-in 0.25s ease-out both; }
+
+	@keyframes page-in {
+		from { opacity: 0; transform: translateY(6px); }
+		to { opacity: 1; transform: none; }
+	}
+
+	/* Handy-Menü und Account-Menü klappen weich auf */
+	.navbar.open .nav-links,
+	.nav-dropdown.open .dropdown-menu { animation: menu-in 0.18s ease-out; }
+
+	@keyframes menu-in {
+		from { opacity: 0; transform: translateY(-6px); }
+		to { opacity: 1; transform: none; }
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.button:active,
+	.chip:active,
+	.qty-btn:active,
+	.stepper-btn:active,
+	.check-btn:active { transform: none; }
+}
+
+@media print {
+	.page-head h1::after { display: none; }
+}
+
+@media (max-width: 800px) {
+	.table-panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* =====================================================
+   Feste Lagerorte, Lagerort-Seite nach Kategorie, Etiketten
+   ===================================================== */
+
+/* Auswahlknöpfe als Radio, brauchen kein JavaScript */
+.plain-fieldset { margin: 0 0 1rem; padding: 0; border: 0; min-width: 0; }
+.plain-fieldset legend { padding: 0; margin-bottom: 0.4rem; font-weight: 600; }
+
+.item-form:not(.js) .chips.fixed-choice { display: flex; }
+
+.radio-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	margin: 0;
+	font-weight: 600;
+}
+
+.radio-chip input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.radio-chip:has(input:checked) { background: var(--primary); border-color: var(--primary); color: #fff; }
+.radio-chip:has(input:focus-visible) { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/* Lagerort-Auswahl oben */
+.location-nav { margin-bottom: 1.25rem; }
+.location-nav .chip .count { font-size: 0.8rem; }
+
+@media (max-width: 700px) {
+	.location-nav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+	.location-nav .chip { flex: 0 0 auto; }
+}
+
+.location-summary { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.9rem; }
+
+/* Kategorien innerhalb eines Lagerorts */
+.category-block + .category-block { padding-top: 1rem; border-top: 1px solid var(--border); }
+
+.category-title {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 0.65rem;
+	font-size: 0.85rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--link);
+}
+
+.category-title .count {
+	padding: 0.05rem 0.5rem;
+	border-radius: 999px;
+	background: var(--primary-soft);
+	font-size: 0.75rem;
+	letter-spacing: 0;
+}
+
+.row-thumb {
+	flex: 0 0 44px;
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	object-fit: cover;
+	background: #262a33;
+}
+
+.row-thumb.placeholder {
+	display: grid;
+	place-items: center;
+	color: var(--muted);
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.list-row.is-expired { border-left: 4px solid var(--danger); }
+.list-row.is-soon { border-left: 4px solid var(--warning); }
+
+@media (max-width: 700px) {
+	.location-panel .list-row { flex-wrap: wrap; }
+	.location-panel .row-main { flex: 1 1 calc(100% - 60px); }
+	.location-panel .qty-control { margin-left: auto; }
+}
+
+/* Etiketten */
+.label-sub { color: var(--muted); font-size: 0.8rem; }
+
+.label-actions {
+	display: grid;
+	gap: 0.5rem;
+	justify-items: center;
+	width: 100%;
+	margin-top: 0.25rem;
+	padding-top: 0.6rem;
+	border-top: 1px solid var(--border);
+}
+
+.label-actions .button-row { justify-content: center; }
+.label-actions .badge { background: rgba(255, 255, 255, 0.07); color: var(--muted); }
+
+.label-grid.single { grid-template-columns: minmax(0, 320px); justify-content: center; }
+.label-grid.single .label-card img { max-width: 260px; }
+
+/* ---------- Meldung mit "Rückgängig" ---------- */
+.flash-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem 1rem;
+}
+.flash-undo { margin: 0; }
+
+/* ---------- Serien-Scan ---------- */
+.series-panel {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.85rem 1.25rem;
+	margin-bottom: 1.25rem;
+}
+.switch-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	flex: 1 1 280px;
+	cursor: pointer;
+}
+.switch-row input {
+	width: 22px;
+	height: 22px;
+	min-height: 0;
+	margin-top: 0.15rem;
+	accent-color: var(--primary);
+	flex: none;
+}
+.switch-row .hint { display: block; margin-top: 0.15rem; }
+.series-log {
+	flex-basis: 100%;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.35rem;
+	font-size: 0.92rem;
+}
+.series-log li {
+	padding: 0.45rem 0.7rem;
+	border-radius: 9px;
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+	overflow-wrap: anywhere;
+}
+.series-log li.added { border-color: rgba(74, 222, 128, 0.3); color: #86efac; }
+.series-log li.pending { border-color: rgba(76, 195, 220, 0.3); color: #a5e3f0; }
+.series-log li.error { border-color: rgba(248, 113, 113, 0.3); color: #fca5a5; }
+.series-log li:not(:first-child) { opacity: 0.7; }
+
+/* ---------- Chargen / Nachkaufen ---------- */
+.restock-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--border);
+}
+.restock-form .field { flex: 1 1 160px; margin: 0; }
+
+/* ---------- Ablaufdatum per Foto ---------- */
+.ocr-row { display: grid; gap: 0.4rem; margin-top: 0.6rem; justify-items: start; }
+.ocr-row .ocr-status:empty { display: none; }
+.ocr-choices:empty { display: none; }
+
+/* =====================================================
+   App-Gefühl am Handy: untere Tab-Leiste, Installieren
+   ===================================================== */
+:root { --tabbar-h: 64px; }
+
+/* Kein blaues Aufblitzen beim Antippen, kein versehentliches Markieren von Knöpfen */
+a, button, .chip, label.button { -webkit-tap-highlight-color: transparent; }
+button, .button, .chip, .tabbar { -webkit-user-select: none; user-select: none; }
+
+.tabbar { display: none; }
+.menu-only { display: none !important; }
+.install-btn { gap: 0.5rem; }
+.install-btn[hidden] { display: none !important; }
+
+@media (max-width: 820px) {
+	.menu-only { display: inline-flex !important; }
+
+	.tabbar {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 60;
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		align-items: end;
+		height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+		padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+		background: rgba(30, 33, 39, 0.96);
+		border-top: 1px solid var(--border);
+		box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: blur(10px);
+	}
+
+	.tabbar a {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.2rem;
+		height: var(--tabbar-h);
+		color: var(--muted);
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.tabbar svg {
+		width: 24px;
+		height: 24px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.9;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.tabbar a.active { color: var(--link); }
+	.tabbar a.active svg { stroke-width: 2.3; }
+
+	/* Scannen ist die Hauptaktion: runder, hervorgehobener Knopf in der Mitte */
+	.tabbar .tab-scan { justify-content: flex-end; padding-bottom: 0.45rem; color: var(--text); }
+	.tab-scan-icon {
+		display: grid;
+		place-items: center;
+		width: 54px;
+		height: 54px;
+		margin-top: -22px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--primary-hover), #075e72);
+		color: #fff;
+		box-shadow: 0 6px 18px rgba(10, 127, 153, 0.45), 0 0 0 4px var(--bg);
+	}
+	.tabbar .tab-scan.active { color: var(--link); }
+
+	/* Platz für die Leiste, damit nichts dahinter verschwindet */
+	body { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 0.5rem); }
+	.form-actions { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: 0.9rem; }
+
+	/* Scannen steckt jetzt unten in der Leiste, oben reicht das Menü */
+	.nav-links a.nav-cta[href$="/scan"] { display: none; }
+}
+
+@media print {
+	.tabbar, .install-sheet { display: none !important; }
+}
+
+/* Installations-Anleitung (iPhone) */
+.install-sheet {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: grid;
+	align-items: end;
+	padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+	background: rgba(0, 0, 0, 0.6);
+}
+.install-sheet[hidden] { display: none; }
+.install-card {
+	width: 100%;
+	max-width: 460px;
+	margin: 0 auto;
+	padding: 1.25rem 1.25rem 1.1rem;
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	background: #1d2027;
+	box-shadow: var(--shadow);
+}
+.install-card h2 { margin: 0 0 0.75rem; font-size: 1.2rem; }
+.install-card ol { margin: 0 0 0.75rem; padding-left: 1.3rem; display: grid; gap: 0.5rem; }
+.install-card svg { vertical-align: -3px; margin-left: 0.25rem; color: var(--link); }
+.install-card .button { width: 100%; margin-top: 0.9rem; }
+
+/* Als installierte App: Kopfleiste etwas kompakter, kein "Gummiband"-Scrollen der ganzen Seite */
+@media (display-mode: standalone) {
+	.navbar-inner { min-height: 56px; }
+	html { overscroll-behavior-y: none; }
+}
+
+/* =====================================================
+   Benutzerfreundlichkeit: Dashboard, Inventar, Scannen
+   ===================================================== */
+
+/* Installations-Banner und Hinweis auf offene Scans */
+.install-banner,
+.notice-link {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	width: 100%;
+	margin-bottom: 1rem;
+	padding: 0.9rem 1rem;
+	border: 1px solid rgba(76, 195, 220, 0.35);
+	border-radius: 14px;
+	background: rgba(10, 127, 153, 0.16);
+	color: var(--text);
+	font: inherit;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+.install-banner:hover,
+.notice-link:hover { background: rgba(10, 127, 153, 0.26); }
+.install-banner-icon {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	background: var(--primary);
+	color: #fff;
+}
+.install-banner-sub { display: block; color: var(--muted); font-size: 0.88rem; }
+.notice-link { justify-content: space-between; flex-wrap: wrap; }
+.notice-link span { color: var(--link); font-weight: 600; }
+
+/* Kennzahlen sind Links ins passende Inventar */
+a.stat-card { display: grid; gap: 0.15rem; color: inherit; text-decoration: none; }
+a.stat-card:hover { border-color: #3a404c; background: var(--surface-hover); }
+a.stat-card:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/* Ablaufdatum mit Status direkt daneben (in der Tabelle darunter, wenn es eng wird) */
+.cell-expiry > span:first-child { white-space: nowrap; }
+.cell-expiry .badge { margin-left: 0.4rem; }
+.items-table:not(.as-cards) .cell-expiry .badge { margin: 0.2rem 0 0; }
+
+/* Tabelle: Menge nie umbrechen; selten genutzte Spalten erst auf sehr breiten Bildschirmen */
+.qty-value { white-space: nowrap; }
+@media (max-width: 1399px) {
+	.items-table:not(.as-cards) .col-optional { display: none; }
+}
+/* Tabellenzeilen kompakt: Inhalt mittig, Aktionen nebeneinander */
+.items-table:not(.as-cards) td { vertical-align: middle; }
+.items-table:not(.as-cards) .cell-actions .button-row { flex-wrap: nowrap; gap: 0.4rem; }
+.items-table:not(.as-cards) .cell-actions .button.small { padding-inline: 0.7rem; }
+.items-table:not(.as-cards) .table-image { width: 52px; height: 52px; }
+
+/* In der Kartenansicht bleibt "Zustand" sichtbar, wenn er ausgefüllt ist */
+.items-table.as-cards td.col-optional:not(.hide-mobile):not(.is-empty) { display: flex; }
+
+/* Aufzählung mit Punkt dazwischen: "Marke · Kategorie · Lagerort" */
+.dot-list > span + span::before { content: " · "; }
+
+/* Detailseite: Menge mit Plus/Minus in einer Zeile */
+.detail-grid div.qty-control { display: inline-flex; justify-self: start; margin-top: 0.15rem; }
+
+/* Kopfzeile mit Knöpfen nutzt am Handy die ganze Breite */
+@media (max-width: 700px) {
+	.page-head-row .button-row { width: 100%; }
+	.page-head-row .button-row > .button { flex: 1 1 0; }
+
+	/* Ohne eigenes Bild kein großer leerer Kasten auf der Detailseite */
+	.image-panel.no-image { display: none; }
+
+	/* Startseite: der große Abstand oben ist für den Desktop gedacht */
+	.home-bg .container { padding-top: 1rem; }
+}
+
+@media (max-width: 700px) {
+	/* Knopfreihen: nebeneinander, solange Platz ist, statt jeder Knopf eine ganze Zeile */
+	.button-row > .button,
+	.button-row > form,
+	.button-row > form .button { flex: 1 1 130px; width: auto; }
+	.button-row > form .button { width: 100%; }
+
+	/* Suche: Feld über die volle Breite, die zwei Auswahlen nebeneinander */
+	.search-row input[type="search"] { flex: 1 1 100%; }
+	.search-row select { flex: 1 1 calc(50% - 0.375rem); }
+	.search-row .button { flex: 1 1 100%; }
+
+	/* Inventar-Karten kompakt: leere Angaben weg, Bearbeiten/Löschen auf der Detailseite */
+	.items-table.as-cards tbody { grid-template-columns: 1fr; gap: 0.65rem; }
+	.items-table.as-cards tr { grid-template-columns: 56px 1fr; padding: 0.7rem 0.8rem; }
+	.items-table.as-cards .table-image { width: 56px; height: 56px; }
+	.items-table.as-cards td { padding: 0.3rem 0; }
+	.items-table.as-cards td.is-empty,
+	.items-table.as-cards td.cell-actions { display: none; }
+	.items-table.as-cards td:nth-last-child(2) { border-bottom: none; }
+	.items-table.as-cards td.cell-name a { display: block; padding: 0.1rem 0; }
+
+	/* Einkaufsliste: Eingabe und Knopf in einer Zeile */
+	.add-form { flex-wrap: nowrap; }
+	.add-form input { flex: 1 1 auto; min-width: 0; }
+	.add-form .button { flex: none; }
+}
+
+/* Scan-Seite: Live-Kamera zuerst, Video erst sichtbar, wenn sie läuft */
+.scanner-panel.live-first { display: flex; flex-direction: column; gap: 0.85rem; }
+.scanner-panel.live-first > * { margin-top: 0; margin-bottom: 0; }
+.scanner-panel.live-first > h2 { order: 0; }
+.scanner-panel.live-first > #live-section { order: 1; }
+.scanner-panel.live-first > #scan-status { order: 2; }
+.scanner-panel.live-first > .photo-hint { order: 3; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+.scanner-panel.live-first > .capture-row { order: 4; }
+
+#live-section:not(.is-live) .video-wrapper,
+#live-section:not(.is-live) #stop-scan,
+#live-section.is-live #start-scan { display: none; }
+#live-section #start-scan { width: 100%; }

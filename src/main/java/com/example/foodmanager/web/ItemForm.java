@@ -3,6 +3,7 @@ package com.example.foodmanager.web;
 import java.time.LocalDate;
 
 import com.example.foodmanager.domain.Item;
+import com.example.foodmanager.domain.QuantityUnit;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -24,7 +25,9 @@ public class ItemForm {
 	@Min(value = 1, message = "Menge muss mindestens 1 sein.")
 	private Integer quantity;
 
-	@NotBlank(message = "Bitte einen Lagerort eingeben!")
+	private QuantityUnit unit = QuantityUnit.STUECK;
+
+	@NotBlank(message = "Bitte einen Lagerort wählen!")
 	private String storageLocation;
 
 	@NotBlank(message = "Bitte eine Kategorie eingeben!")
@@ -39,13 +42,33 @@ public class ItemForm {
 
 	private LocalDate purchaseDate;
 
-	private LocalDate warrantyUntil;
-
 	private Integer minQuantity;
+
+	/** Stand des Items beim Öffnen des Formulars, zum Erkennen gleichzeitiger Änderungen. */
+	private Long version;
+
+	/** Kommt das Formular aus der Einräum-Liste (Serien-Scan), wird der Eintrag nach dem Speichern entfernt. */
+	private Long pendingScanId;
 
 	// ------------------------------------------------------------
 	// GETTER / SETTER
 	// ------------------------------------------------------------
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public Long getPendingScanId() {
+		return pendingScanId;
+	}
+
+	public void setPendingScanId(Long pendingScanId) {
+		this.pendingScanId = pendingScanId;
+	}
 
 	public String getName() {
 		return name;
@@ -85,6 +108,14 @@ public class ItemForm {
 
 	public void setQuantity(Integer quantity) {
 		this.quantity = quantity;
+	}
+
+	public QuantityUnit getUnit() {
+		return unit;
+	}
+
+	public void setUnit(QuantityUnit unit) {
+		this.unit = unit != null ? unit : QuantityUnit.STUECK;
 	}
 
 	public String getStorageLocation() {
@@ -140,14 +171,6 @@ public class ItemForm {
 		this.purchaseDate = purchaseDate;
 	}
 
-	public LocalDate getWarrantyUntil() {
-		return warrantyUntil;
-	}
-
-	public void setWarrantyUntil(LocalDate warrantyUntil) {
-		this.warrantyUntil = warrantyUntil;
-	}
-
 	public Integer getMinQuantity() {
 		return minQuantity;
 	}
@@ -168,6 +191,7 @@ public class ItemForm {
 		form.setBarcode(item.getBarcode());
 		form.setExpiryDate(item.getExpiryDate());
 		form.setQuantity(item.getQuantity());
+		form.setUnit(item.getUnit());
 		form.setStorageLocation(item.getStorageLocation());
 		form.setCategory(item.getCategory());
 		form.setNotes(item.getNotes());
@@ -175,8 +199,8 @@ public class ItemForm {
 
 		form.setCondition(item.getCondition());
 		form.setPurchaseDate(item.getPurchaseDate());
-		form.setWarrantyUntil(item.getWarrantyUntil());
 		form.setMinQuantity(item.getMinQuantity());
+		form.setVersion(item.getVersion());
 
 		return form;
 	}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
+	<meta name="theme-color" content="#22252b">
+	<title th:text="${pageTitle}">Rezept</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}"><th:block th:replace="~{fragments/pwa :: tags}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar('recipes')}"></div>
+
+<main class="container">
+
+	<div class="page-head">
+		<h1 th:text="${pageTitle}">Rezept</h1>
+		<p>Schreib eine Zutat pro Zeile, zum Beispiel „200 g Mehl“. Foodmanager gleicht sie mit deinem Vorrat ab.</p>
+	</div>
+
+	<!-- Rezept von einer Webseite laden -->
+	<section id="import" class="panel stack" th:if="${showImport}">
+		<h2 style="margin:0;font-size:1.05rem">Von einer Webseite laden</h2>
+		<p class="hint small" style="margin:0">
+			Füge die Adresse einer Rezeptseite ein. Titel, Zutaten und Zubereitung werden übernommen.
+			Danach kannst du alles prüfen und anpassen.
+		</p>
+
+		<div class="flash error" th:if="${importError}" th:text="${importError}"></div>
+		<div class="flash info" th:if="${importInfo}" th:text="${importInfo}"></div>
+
+		<form method="post" th:action="@{/recipes/import}" class="add-form"
+			  onsubmit="var b = this.querySelector('button'); b.disabled = true; b.textContent = 'Lade …';">
+			<label class="visually-hidden" for="import-url">Webadresse</label>
+			<input id="import-url" type="text" name="url" th:value="${importUrl}" inputmode="url"
+				   autocomplete="off" maxlength="2000" placeholder="https://…">
+			<button type="submit" class="button primary">Laden</button>
+		</form>
+
+		<p class="hint small" style="margin:0">Das klappt bei vielen Rezeptseiten, aber nicht bei allen. Manche sperren automatische Abrufe.</p>
+	</section>
+
+	<form th:action="${formAction}" th:object="${recipeForm}" method="post" class="panel stack" novalidate>
+		<input type="hidden" th:field="*{sourceUrl}">
+
+
+		<div class="field">
+			<label for="title">Titel *</label>
+			<input id="title" type="text" th:field="*{title}" placeholder="z. B. Pfannkuchen" maxlength="200" autocomplete="off" required>
+			<p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+		</div>
+
+		<div class="field">
+			<label for="ingredients">Zutaten * <span class="hint small">(eine pro Zeile)</span></label>
+			<textarea id="ingredients" rows="8" th:field="*{ingredients}"
+					  placeholder="200 g Mehl&#10;2 Eier&#10;300 ml Milch&#10;1 Prise Salz"></textarea>
+			<p class="field-error" th:if="${#fields.hasErrors('ingredients')}" th:errors="*{ingredients}"></p>
+		</div>
+
+		<div class="field">
+			<label for="instructions">Zubereitung</label>
+			<textarea id="instructions" rows="8" th:field="*{instructions}" placeholder="Schritt für Schritt"></textarea>
+			<p class="field-error" th:if="${#fields.hasErrors('instructions')}" th:errors="*{instructions}"></p>
+		</div>
+
+		<div class="button-row">
+			<button type="submit" class="button primary large">Speichern</button>
+			<a th:href="@{/recipes}" class="button large">Abbrechen</a>
+		</div>
+	</form>
+
+</main>
+
+</body>
+</html>

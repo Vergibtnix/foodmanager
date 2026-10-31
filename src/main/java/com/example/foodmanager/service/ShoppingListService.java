@@ -2,6 +2,7 @@ package com.example.foodmanager.service;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,16 +14,26 @@ import com.example.foodmanager.repository.ShoppingEntryRepository;
 @Transactional
 public class ShoppingListService {
 
-    /** Vorschlag aus dem Mindestbestand: wie viele Stück fehlen bis zum Mindestbestand. */
+    /** Vorschlag aus dem Mindestbestand: wie viel fehlt bis zum Mindestbestand (in der Einheit des Items). */
     public record Suggestion(Item item, int missing) {
+
+        public String missingLabel() {
+            return item.getUnit().format(missing);
+        }
     }
 
     private final ShoppingEntryRepository repository;
     private final ItemService itemService;
+    private final ApplicationEventPublisher events;
 
-    public ShoppingListService(ShoppingEntryRepository repository, ItemService itemService) {
+    public ShoppingListService(ShoppingEntryRepository repository, ItemService itemService, ApplicationEventPublisher events) {
         this.repository = repository;
         this.itemService = itemService;
+        this.events = events;
+    }
+
+    private void changed() {
+        events.publishEvent(new DataChangedEvent(DataChangedEvent.SHOPPING));
     }
 
     @Transactional(readOnly = true)
@@ -57,6 +68,7 @@ public class ShoppingListService {
         ShoppingEntry entry = new ShoppingEntry();
         entry.setName(clean);
         repository.save(entry);
+        changed();
         return true;
     }
 
@@ -71,20 +83,28 @@ public class ShoppingListService {
         return added;
     }
 
-    public void toggle(Long id) {
-        repository.findById(id).ifPresent(entry -> entry.setDone(!entry.isDone()));
+    /**
+     * Setzt den Eintrag auf erledigt oder offen. Bewusst kein Umschalten: tippen zwei Leute gleichzeitig
+     * auf denselben Eintrag, bleibt er abgehakt, statt sich zurückzudrehen.
+     */
+    public void setDone(Long id, boolean done) {
+        repository.findById(id).ifPresent(entry -> entry.setDone(done));
+        changed();
     }
 
     public void delete(Long id) {
-        repository.deleteById(id);
+        repository.findById(id).ifPresent(repository::delete);
+        changed();
     }
 
     public void clearDone() {
         repository.deleteAll(repository.findByDoneTrue());
+        changed();
     }
 
     /** Vorschlag abhaken: Bestand auf den Mindestbestand auffüllen. */
     public Item markBought(Long itemId) {
+        changed();
         return itemService.restockToMinimum(itemId);
     }
 }
